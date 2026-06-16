@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1">
+<meta name="theme-color" content="#f0a500">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="F.I.G.">
+<meta name="application-name" content="F.I.G.">
+<meta name="description" content="Flightline Information Gateway — offline utility dashboard">
+<meta name="msapplication-TileColor" content="#0a0c0f">
+<meta name="msapplication-TileImage" content="./icon-144.png">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="apple-touch-icon" sizes="152x152" href="./icon-152.png">
+<title>F.I.G. — Flightline Information Gateway</title>
+<style>
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg0);color:var(--txt0);font-family:monospace;height:100dvh;display:flex;flex-direction:column}
+#topbar{background:var(--bg1);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+#topbar-brand{color:var(--accent);font-size:12px;letter-spacing:3px}
+#topbar-zulu{color:#38bdf8;font-size:13px}
+#screens{flex:1;overflow:hidden;position:relative}
+.screen{position:absolute;inset:0;overflow-y:auto;display:none;padding:16px}
+.screen.active{display:block}
+#botnav{background:var(--bg1);border-top:1px solid var(--border);display:flex;flex-shrink:0}
+.nb{flex:1;padding:12px 4px;background:none;border:none;color:var(--txt2);font-family:monospace;font-size:9px;letter-spacing:1px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
+.nb.on{color:var(--accent)}
+.nb-icon{font-size:20px}
+/* HOME */
+.hero{background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px}
+.hero-lbl{font-size:9px;letter-spacing:3px;color:var(--txt2);margin-bottom:6px}
+.hero-val{font-size:22px;color:var(--accent);letter-spacing:2px}
+.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.card{background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:18px 14px;cursor:pointer}
+.card:active{border-color:var(--accent)}
+.card-title{font-size:13px;letter-spacing:2px;color:var(--txt0);margin-top:8px}
+.card-sub{font-size:11px;color:var(--txt2);margin-top:4px}
+.card-icon{font-size:22px;color:var(--accent)}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat{background:var(--bg1);border:1px solid var(--border);border-radius:8px;padding:10px 4px;text-align:center}
+.stat-n{font-size:22px;color:var(--accent)}
+.stat-l{font-size:8px;letter-spacing:1px;color:var(--txt2);margin-top:4px}
+/* GENERIC SCREEN */
+.scr-title{font-size:10px;letter-spacing:4px;color:var(--accent);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.mod{background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px}
+.mod-title{font-size:9px;letter-spacing:3px;color:var(--accent);margin-bottom:10px}
+input,select,textarea{width:100%;background:var(--bg0);border:1px solid var(--border);border-radius:8px;color:var(--txt0);font-family:monospace;font-size:14px;padding:11px 12px;margin-bottom:8px;-webkit-appearance:none}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+.btn{background:var(--bg2);border:1px solid #364050;border-radius:8px;color:var(--txt0);font-family:monospace;font-size:11px;letter-spacing:2px;padding:12px 16px;cursor:pointer;min-height:46px}
+.btn.acc{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700}
+.btn.full{width:100%;text-align:center;margin-bottom:8px}
+.row{display:flex;gap:8px}
+.row input{margin-bottom:0}
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:14px;overflow-x:auto}
+.tab{flex-shrink:0;background:none;border:none;border-bottom:2px solid transparent;color:var(--txt2);font-family:monospace;font-size:10px;letter-spacing:2px;padding:10px 12px;cursor:pointer}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+.panel{display:none}
+.panel.on{display:block}
+/* ENTRY CARDS */
+.entry{background:var(--bg0);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px}
+.entry-top{display:flex;justify-content:space-between;margin-bottom:6px}
+.badge{font-size:9px;letter-spacing:2px;background:rgba(240,165,0,.1);border:1px solid var(--accent-dim);color:var(--accent);border-radius:4px;padding:2px 7px}
+.entry-date{font-size:10px;color:var(--txt2);font-family:monospace}
+.entry-desc{font-size:13px;margin-bottom:4px}
+.entry-note{font-size:11px;color:var(--txt1);white-space:pre-wrap}
+.entry-btns{display:flex;gap:6px;margin-top:8px}
+.smbtn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--txt2);font-family:monospace;font-size:10px;padding:4px 10px;cursor:pointer}
+/* MODAL */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;display:none}
+.modal.show{display:flex}
+.modal-box{background:#181d23;border:1px solid #364050;border-radius:12px;padding:20px;width:100%;max-width:360px}
+.modal-title{font-size:10px;letter-spacing:3px;color:var(--accent);margin-bottom:14px}
+.modal-msg{font-size:13px;color:var(--txt1);margin-bottom:16px;line-height:1.6}
+/* TOAST */
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#181d23;border:1px solid #364050;border-radius:20px;padding:9px 20px;font-size:11px;letter-spacing:1px;z-index:200;white-space:nowrap;opacity:0;transition:opacity .3s;pointer-events:none}
+#toast.show{opacity:1}
+#toast.ok{border-color:#22c55e;color:#22c55e}
+#toast.err{border-color:#ef4444;color:#ef4444}
+/* NOTE CARDS */
+.note-card{background:var(--bg0);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px}
+.note-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.note-ttl{font-size:12px;letter-spacing:1px;color:var(--accent)}
+.note-dt{font-size:10px;color:var(--txt2)}
+.note-body{font-size:13px;color:var(--txt1);white-space:pre-wrap;line-height:1.5}
+.acro-row{display:flex;gap:10px;background:var(--bg0);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;align-items:baseline}
+.acro-a{font-size:13px;color:var(--accent);min-width:60px;flex-shrink:0}
+.acro-d{font-size:12px;color:var(--txt1)}
+.fav-row{display:flex;align-items:center;gap:8px;background:var(--bg0);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px}
+.fav-type{font-size:9px;letter-spacing:2px;color:var(--txt2);min-width:36px}
+.fav-code{font-size:11px;color:var(--accent);font-family:monospace;margin-right:4px}
+.empty{font-size:10px;letter-spacing:2px;color:var(--txt2);text-align:center;padding:20px 0}
+.tz-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tz-cell{background:var(--bg0);border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center}
+.tz-name{font-size:8px;letter-spacing:2px;color:var(--txt2);margin-bottom:4px}
+.tz-val{font-size:15px;font-family:monospace}
+.sum-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.sum-cell{background:var(--bg0);border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center}
+.sum-n{font-size:20px;color:var(--accent)}
+.sum-l{font-size:8px;letter-spacing:1px;color:var(--txt2);margin-top:4px}
+.period-row{display:flex;gap:4px}
+.pbtn{background:var(--bg0);border:1px solid var(--border);border-radius:6px;color:var(--txt2);font-family:monospace;font-size:9px;letter-spacing:1px;padding:5px 10px;cursor:pointer}
+.pbtn.on{background:var(--accent);border-color:var(--accent);color:#000;font-weight:700}
+.swatch-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.swatch{cursor:pointer;text-align:center}
+.swatch-pre{height:36px;border-radius:6px;border:2px solid transparent;margin-bottom:4px}
+.swatch.on .swatch-pre{border-color:var(--accent)}
+.swatch-lbl{font-size:9px;color:var(--txt2)}
+.sw-a{background:linear-gradient(135deg,#111418 50%,var(--accent) 50%)}
+.sw-b{background:linear-gradient(135deg,#0e1409 50%,#7ab428 50%)}
+.sw-c{background:linear-gradient(135deg,#0a0a0a 50%,#38bdf8 50%)}
+.sw-d{background:linear-gradient(135deg,#140a0a 50%,#ef4444 50%)}
+
+/* ── THEME VARIABLES ── */
+:root {
+  --bg0: #0a0c0f;
+  --bg1: #111418;
+  --bg2: #1e242c;
+  --border: #2a3140;
+  --accent: #f0a500;
+  --accent-dim: #7a5200;
+  --txt0: #f0f4f8;
+  --txt1: #8b95a3;
+  --txt2: #4a5568;
+}
+[data-theme=olive] {
+  --bg0: #080d04;
+  --bg1: #0e1409;
+  --bg2: #161e0d;
+  --border: #253017;
+  --accent: #7ab428;
+  --accent-dim: #3d5a14;
+}
+[data-theme=stealth] {
+  --bg0: #060606;
+  --bg1: #0d0d0d;
+  --bg2: #181818;
+  --border: #202020;
+  --accent: #38bdf8;
+  --accent-dim: #0c4a6e;
+}
+[data-theme=red] {
+  --bg0: #0f0505;
+  --bg1: #160a0a;
+  --bg2: #221212;
+  --border: #3d1515;
+  --accent: #ef4444;
+  --accent-dim: #7f1d1d;
+}
+.timer-disp{font-family:monospace;font-size:38px;letter-spacing:3px;color:var(--accent);text-align:center;padding:14px;background:var(--bg0);border:1px solid var(--border);border-radius:8px;margin-bottom:10px}
+.res-block{background:var(--bg0);border:1px solid #364050;border-radius:8px;padding:12px;margin-top:8px;display:none}
+.res-block.show{display:block}
+.res-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)}
+.res-row:last-child{border-bottom:none}
+.res-k{font-size:9px;letter-spacing:2px;color:var(--txt2)}
+.res-v{font-size:13px;color:var(--accent);font-family:monospace}
+.conv-out{background:var(--bg0);border:1px solid var(--border);border-radius:8px;padding:10px 12px;min-height:40px;font-size:12px}
+.conv-line{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)}
+.conv-line:last-child{border-bottom:none}
+.conv-lbl{color:var(--txt2);font-size:10px}
+.conv-n{color:var(--accent)}
+.subtabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.stab{background:var(--bg0);border:1px solid var(--border);border-radius:6px;color:var(--txt2);font-family:monospace;font-size:10px;padding:6px 10px;cursor:pointer}
+.stab.on{background:var(--accent);border-color:var(--accent);color:#000;font-weight:700}
+.cpanel{display:none}
+.cpanel.on{display:block}
+.set-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);gap:8px}
+.set-row:last-child{border-bottom:none}
+.set-lbl{font-size:13px;color:var(--txt1)}
+.set-lbl.red{color:#ef4444}
+.edit-btn{background:none;border:1px solid var(--border);border-radius:6px;color:#38bdf8;font-family:monospace;font-size:10px;padding:4px 10px;cursor:pointer}
+
+</style>
+
+<script>
+// Apply saved theme SYNCHRONOUSLY before first paint — no flash
+(function() {
+  var t = localStorage.getItem('fig_theme');
+  if (t && t !== 'default') {
+    document.documentElement.setAttribute('data-theme', t);
+  }
+})();
+</script>
+</head>
+<body>
+
+<header id="topbar">
+  <span id="topbar-brand">⬡ F.I.G.</span>
+  <span id="topbar-zulu">--:--:-- Z</span>
+  <span id="topbar-dot" style="font-size:8px;color:var(--txt2)">●</span>
+</header>
+
+<div id="screens">
+
+<!-- HOME -->
+<div id="s-home" class="screen active">
+  <div class="hero">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div>
+        <div class="hero-lbl">LOCAL TIME</div>
+        <div class="hero-val" id="h-local" style="font-size:19px">--:--:--</div>
+      </div>
+      <div>
+        <div class="hero-lbl">ZULU (UTC)</div>
+        <div class="hero-val" id="h-zulu" style="font-size:19px">--:--:--</div>
+      </div>
+    </div>
+    <div>
+      <div class="hero-lbl">JULIAN DATE</div>
+      <div class="hero-val" id="h-julian" style="font-size:30px;letter-spacing:5px">-----</div>
+      <div style="font-size:10px;color:var(--txt2);margin-top:4px" id="h-date">--- -- ----</div>
+      <div style="font-size:10px;color:var(--txt2)" id="h-doy">DAY --- / ---</div>
+    </div>
+  </div>
+  <div style="font-size:9px;letter-spacing:3px;color:var(--txt2);margin-bottom:8px">QUICK ACCESS</div>
+  <div class="card-grid">
+    <div class="card" data-nav="ops"><div class="card-icon">◎</div><div class="card-title">OPS</div><div class="card-sub">ICAO · GO81 · Time</div></div>
+    <div class="card" data-nav="tools"><div class="card-icon">⚙</div><div class="card-title">TOOLS</div><div class="card-sub">Julian · Convert · Timers</div></div>
+    <div class="card" data-nav="tracker"><div class="card-icon">◈</div><div class="card-title">TRACKER</div><div class="card-sub">Flights · Events · EPB</div></div>
+    <div class="card" data-nav="notes"><div class="card-icon">≡</div><div class="card-title">NOTES</div><div class="card-sub">Ref · Acronyms · Shift</div></div>
+  </div>
+  <div style="font-size:9px;letter-spacing:3px;color:var(--txt2);margin-bottom:8px">THIS MONTH</div>
+  <div class="stat-row" style="margin-bottom:12px">
+    <div class="stat"><div class="stat-n" id="ms-fl">0</div><div class="stat-l">FLIGHTS</div></div>
+    <div class="stat"><div class="stat-n" id="ms-ev">0</div><div class="stat-l">EVENTS</div></div>
+    <div class="stat"><div class="stat-n" id="ms-ep">0</div><div class="stat-l">EPB</div></div>
+    <div class="stat"><div class="stat-n" id="ms-vh">0</div><div class="stat-l">VOL HRS</div></div>
+  </div>
+  <div style="font-size:9px;letter-spacing:3px;color:var(--txt2);margin-bottom:8px">SHIFT NOTE</div>
+  <div id="shift-block" style="background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;min-height:50px">
+    <div style="font-size:8px;letter-spacing:3px;color:var(--accent);margin-bottom:6px">CURRENT NOTE <span style="color:var(--txt2)">· TAP TO EDIT</span></div>
+    <div id="shift-display" style="font-size:13px;color:var(--txt1)">No shift note. Tap to add...</div>
+  </div>
+</div>
+
+<!-- OPS -->
+<div id="s-ops" class="screen">
+  <div class="scr-title">OPERATIONS</div>
+  <div class="mod">
+    <div class="mod-title">ICAO LOOKUP</div>
+    <div class="row"><input id="icao-in" placeholder="ICAO code (e.g. KLSV)" maxlength="4" autocomplete="off" style="text-transform:uppercase;flex:1"><button class="btn" id="icao-btn">SEARCH</button></div>
+    <div class="res-block" id="icao-res"></div>
+  </div>
+  <div class="mod">
+    <div class="mod-title">GO81 LOOKUP</div>
+    <div class="row"><input id="go81-in" placeholder="Code or keyword..." autocomplete="off" style="flex:1"><button class="btn" id="go81-btn">SEARCH</button></div>
+    <div id="go81-res" style="margin-top:8px"></div>
+  </div>
+  <div class="mod">
+    <div class="mod-title">FAVORITES</div>
+    <div id="fav-list"><div class="empty">NO FAVORITES YET</div></div>
+  </div>
+  <div class="mod">
+    <div class="mod-title">TIME ZONES</div>
+    <div class="tz-grid" id="tz-grid"></div>
+  </div>
+</div>
+
+<!-- TOOLS -->
+<div id="s-tools" class="screen">
+  <div class="scr-title">TOOLS</div>
+  <div class="tabs" id="tool-tabs">
+    <button class="tab on" data-t="julian">JULIAN</button>
+    <button class="tab" data-t="convert">CONVERT</button>
+    <button class="tab" data-t="timers">TIMERS</button>
+  </div>
+  <div id="tp-julian" class="panel on">
+    <div class="mod">
+      <div class="mod-title">TODAY</div>
+      <div style="background:var(--bg0);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px">
+        <div class="res-row"><span class="res-k">DATE</span><span class="res-v" id="jn-date">---</span></div>
+        <div class="res-row"><span class="res-k">AF JULIAN</span><span class="res-v" id="jn-jul">---</span></div>
+        <div class="res-row"><span class="res-k">DAY OF YEAR</span><span class="res-v" id="jn-doy">---</span></div>
+        <div class="res-row" style="border:none"><span class="res-k">WEEK #</span><span class="res-v" id="jn-wk">---</span></div>
+      </div>
+    </div>
+    <div class="mod">
+      <div class="mod-title">DATE → JULIAN</div>
+      <input type="date" id="d2j-in" style="color-scheme:dark">
+      <button class="btn acc full" id="d2j-btn">CONVERT</button>
+      <div class="res-block" id="d2j-res"></div>
+    </div>
+    <div class="mod">
+      <div class="mod-title">JULIAN → DATE</div>
+      <div class="row" style="margin-bottom:8px">
+        <input type="number" id="j2d-yr" placeholder="YEAR" min="2000" max="2099" style="flex:1;margin-bottom:0">
+        <input type="number" id="j2d-day" placeholder="DAY (1-366)" min="1" max="366" style="flex:1;margin-bottom:0">
+      </div>
+      <button class="btn acc full" id="j2d-btn">CONVERT</button>
+      <div class="res-block" id="j2d-res"></div>
+    </div>
+  </div>
+  <div id="tp-convert" class="panel">
+    <div class="mod">
+      <div class="mod-title">UNIT CONVERTER</div>
+      <div class="subtabs" id="conv-tabs">
+        <button class="stab on" data-c="length">LENGTH</button>
+        <button class="stab" data-c="weight">WEIGHT</button>
+        <button class="stab" data-c="temp">TEMP</button>
+        <button class="stab" data-c="fuel">FUEL</button>
+        <button class="stab" data-c="pressure">PRESS</button>
+        <button class="stab" data-c="torque">TORQUE</button>
+      </div>
+      <div id="cv-length" class="cpanel on"><div class="row" style="margin-bottom:8px"><input type="number" id="ci-length" placeholder="Inches" style="flex:1;margin-bottom:0"><span style="font-size:11px;color:var(--txt2);padding:14px 4px;flex-shrink:0">IN</span></div><div class="conv-out" id="co-length"></div></div>
+      <div id="cv-weight" class="cpanel"><div class="row" style="margin-bottom:8px"><input type="number" id="ci-weight" placeholder="Pounds" style="flex:1;margin-bottom:0"><span style="font-size:11px;color:var(--txt2);padding:14px 4px;flex-shrink:0">LB</span></div><div class="conv-out" id="co-weight"></div></div>
+      <div id="cv-temp"   class="cpanel"><div class="row" style="margin-bottom:8px"><input type="number" id="ci-temp"   placeholder="Fahrenheit" style="flex:1;margin-bottom:0"><span style="font-size:11px;color:var(--txt2);padding:14px 4px;flex-shrink:0">°F</span></div><div class="conv-out" id="co-temp"></div></div>
+      <div id="cv-fuel"   class="cpanel"><div class="row" style="margin-bottom:8px"><input type="number" id="ci-fuel"   placeholder="US Gallons" style="flex:1;margin-bottom:0"><span style="font-size:11px;color:var(--txt2);padding:14px 4px;flex-shrink:0">GAL</span></div><div class="conv-out" id="co-fuel"></div></div>
+      <div id="cv-pressure" class="cpanel"><div class="row" style="margin-bottom:8px"><input type="number" id="ci-pressure" placeholder="PSI" style="flex:1;margin-bottom:0"><span style="font-size:11px;color:var(--txt2);padding:14px 4px;flex-shrink:0">PSI</span></div><div class="conv-out" id="co-pressure"></div></div>
+      <div id="cv-torque" class="cpanel"><div class="row" style="margin-bottom:8px"><input type="number" id="ci-torque" placeholder="Foot-Pounds" style="flex:1;margin-bottom:0"><span style="font-size:11px;color:var(--txt2);padding:14px 4px;flex-shrink:0">FT·LB</span></div><div class="conv-out" id="co-torque"></div></div>
+    </div>
+  </div>
+  <div id="tp-timers" class="panel">
+    <div class="mod">
+      <div class="mod-title">STOPWATCH</div>
+      <div class="timer-disp" id="sw-disp">00:00:00</div>
+      <div class="row"><button class="btn" id="sw-start" style="flex:1">START</button><button class="btn" id="sw-lap" style="flex:1">LAP</button><button class="btn" id="sw-reset" style="flex:1;border-color:#ef4444;color:#ef4444">RESET</button></div>
+      <div id="sw-laps" style="margin-top:8px;max-height:100px;overflow-y:auto"></div>
+    </div>
+    <div class="mod">
+      <div class="mod-title">COUNTDOWN TIMER</div>
+      <div class="row" style="margin-bottom:8px">
+        <input type="number" id="cd-h" placeholder="HH" min="0" style="flex:1;margin-bottom:0">
+        <input type="number" id="cd-m" placeholder="MM" min="0" max="59" style="flex:1;margin-bottom:0">
+        <input type="number" id="cd-s" placeholder="SS" min="0" max="59" style="flex:1;margin-bottom:0">
+      </div>
+      <div class="timer-disp" id="cd-disp">00:00:00</div>
+      <div class="row"><button class="btn" id="cd-start" style="flex:1">START</button><button class="btn" id="cd-reset" style="flex:1;border-color:#ef4444;color:#ef4444">RESET</button></div>
+    </div>
+    <div class="mod">
+      <div class="mod-title">SHIFT ELAPSED</div>
+      <div class="row" style="margin-bottom:8px"><input type="time" id="shift-in" style="flex:1;margin-bottom:0;color-scheme:dark"><button class="btn" id="shift-set" style="flex-shrink:0">SET</button></div>
+      <div class="timer-disp" id="shift-disp">--:--:--</div>
+      <div id="shift-ends" style="font-size:11px;color:var(--txt2);text-align:center;margin-top:4px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TRACKER -->
+<div id="s-tracker" class="screen">
+  <div class="scr-title">TRACKER</div>
+  <div class="mod">
+    <div class="mod-title">LOG ENTRY</div>
+    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px"><span style="font-size:8px;letter-spacing:2px;color:var(--txt2);min-width:60px;flex-shrink:0;padding-top:12px">TYPE</span>
+      <select id="ent-type" style="flex:1;margin-bottom:0">
+        <option value="flight">Flight Supported</option>
+        <option value="launch">Launch</option>
+        <option value="recovery">Recovery</option>
+        <option value="event">Event Supported</option>
+        <option value="exercise">Exercise</option>
+        <option value="inspection">Inspection</option>
+        <option value="volunteer">Volunteer Hours</option>
+        <option value="epb">EPB Accomplishment</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px"><span style="font-size:8px;letter-spacing:2px;color:var(--txt2);min-width:60px;flex-shrink:0;padding-top:12px">DATE</span><input type="date" id="ent-date" style="flex:1;margin-bottom:0;color-scheme:dark"></div>
+    <div id="ent-hrs-row" style="display:none;align-items:baseline;gap:8px;margin-bottom:6px"><span style="font-size:8px;letter-spacing:2px;color:var(--txt2);min-width:60px;flex-shrink:0;padding-top:12px">HOURS</span><input type="number" id="ent-hrs" placeholder="0.0" step="0.5" min="0" style="flex:1;margin-bottom:0"></div>
+    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px"><span style="font-size:8px;letter-spacing:2px;color:var(--txt2);min-width:60px;flex-shrink:0;padding-top:12px">DESC</span><input id="ent-desc" placeholder="Brief description..." autocorrect="off" style="flex:1;margin-bottom:0"></div>
+    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px"><span style="font-size:8px;letter-spacing:2px;color:var(--txt2);min-width:60px;flex-shrink:0;padding-top:12px">NOTES</span><textarea id="ent-notes" rows="3" placeholder="Details / EPB bullet..." style="flex:1;margin-bottom:0;resize:vertical;padding:10px 12px;line-height:1.5"></textarea></div>
+    <button class="btn acc full" id="ent-add">+ LOG ENTRY</button>
+  </div>
+  <div class="mod">
+    <div class="mod-title" style="display:flex;justify-content:space-between;align-items:center">
+      <span>SUMMARY</span>
+      <div class="period-row">
+        <button class="pbtn on" data-p="month">MONTH</button>
+        <button class="pbtn" data-p="year">YEAR</button>
+        <button class="pbtn" data-p="all">ALL</button>
+      </div>
+    </div>
+    <div class="sum-grid" id="sum-grid"></div>
+  </div>
+  <div class="mod">
+    <div class="mod-title">EXPORT</div>
+    <div class="row"><button class="btn" id="exp-json" style="flex:1">EXPORT JSON</button><button class="btn" id="exp-csv" style="flex:1">EXPORT CSV</button></div>
+  </div>
+  <div class="mod">
+    <div class="mod-title">LOG</div>
+    <input id="trk-search" placeholder="Search entries..." autocorrect="off">
+    <div id="trk-log"></div>
+  </div>
+</div>
+
+<!-- NOTES -->
+<div id="s-notes" class="screen">
+  <div class="scr-title">NOTES & REFERENCE</div>
+  <div class="tabs" id="note-tabs">
+    <button class="tab on" data-nt="notes">NOTES</button>
+    <button class="tab" data-nt="ref">REFERENCE</button>
+    <button class="tab" data-nt="acro">ACRONYMS</button>
+  </div>
+  <div id="np-notes" class="panel on">
+    <div class="mod">
+      <div class="mod-title">NEW NOTE</div>
+      <input id="note-title" placeholder="Note title..." autocorrect="off">
+      <textarea id="note-body" rows="4" placeholder="Content..." style="resize:vertical;padding:10px 12px;line-height:1.5"></textarea>
+      <button class="btn acc full" id="note-save">SAVE NOTE</button>
+    </div>
+    <div class="mod">
+      <div class="mod-title">SAVED NOTES</div>
+      <input id="note-search" placeholder="Search notes..." autocorrect="off">
+      <div id="notes-list"></div>
+    </div>
+  </div>
+  <div id="np-ref" class="panel">
+    <div class="mod">
+      <div class="mod-title">REFERENCE LIBRARY</div>
+      <input id="ref-search" placeholder="Search references..." autocorrect="off">
+      <div id="ref-list"></div>
+      <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px">
+        <div class="mod-title">ADD REFERENCE</div>
+        <input id="ref-title" placeholder="Title..." autocorrect="off">
+        <textarea id="ref-body" rows="3" placeholder="Content..." style="resize:vertical;padding:10px 12px;line-height:1.5"></textarea>
+        <input id="ref-tags" placeholder="Tags (comma separated)..." autocorrect="off">
+        <button class="btn full" id="ref-save">SAVE REFERENCE</button>
+      </div>
+    </div>
+  </div>
+  <div id="np-acro" class="panel">
+    <div class="mod">
+      <div class="mod-title">ACRONYM DICTIONARY</div>
+      <input id="acro-search" placeholder="Search acronyms..." autocorrect="off">
+      <div id="acro-list"></div>
+      <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px">
+        <div class="mod-title">ADD ACRONYM</div>
+        <div class="row" style="margin-bottom:0">
+          <input id="acro-abbr" placeholder="Abbreviation" autocorrect="off" style="flex:1;text-transform:uppercase;margin-bottom:0">
+          <input id="acro-def" placeholder="Definition" autocorrect="off" style="flex:1;margin-bottom:0">
+        </div>
+        <button class="btn full" id="acro-save" style="margin-top:8px">SAVE</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div id="s-settings" class="screen">
+  <div class="scr-title">SETTINGS</div>
+  <div class="tabs" id="settings-tabs">
+    <button class="tab on" data-st="general">GENERAL</button>
+    <button class="tab" data-st="icao">ICAO DB</button>
+    <button class="tab" data-st="go81">GO81 DB</button>
+    <button class="tab" data-st="tz">TIME ZONES</button>
+  </div>
+  <div id="stp-general" class="panel on">
+    <div class="mod">
+      <div class="mod-title">DATA</div>
+      <div class="set-row"><span class="set-lbl">Export All Data</span><button class="btn" id="set-export" style="padding:8px 14px;font-size:10px;min-height:36px">EXPORT</button></div>
+      <div class="set-row"><span class="set-lbl">Import Backup</span><button class="btn" id="set-import" style="padding:8px 14px;font-size:10px;min-height:36px">IMPORT</button></div>
+      <div class="set-row"><span class="set-lbl red">Clear All Data</span><button class="btn" id="set-clear" style="padding:8px 14px;font-size:10px;min-height:36px;border-color:#ef4444;color:#ef4444">CLEAR</button></div>
+      <input type="file" id="import-file" accept=".json" style="display:none;width:0;height:0;padding:0;margin:0;border:none">
+    </div>
+    <div class="mod">
+      <div class="mod-title">THEME</div>
+      <div class="swatch-row">
+        <div class="swatch on" data-theme="default"><div class="swatch-pre sw-a"></div><div class="swatch-lbl">GUNSHIP</div></div>
+        <div class="swatch" data-theme="olive"><div class="swatch-pre sw-b"></div><div class="swatch-lbl">OLIVE</div></div>
+        <div class="swatch" data-theme="stealth"><div class="swatch-pre sw-c"></div><div class="swatch-lbl">STEALTH</div></div>
+        <div class="swatch" data-theme="red"><div class="swatch-pre sw-d"></div><div class="swatch-lbl">ALERT</div></div>
+      </div>
+    </div>
+    <div class="mod">
+      <div class="mod-title">ABOUT</div>
+      <div class="res-row"><span class="res-k">VERSION</span><span style="font-size:12px;color:var(--txt0)">FLIGHTLINE v1.2</span></div>
+      <div class="res-row"><span class="res-k">STORAGE</span><span style="font-size:12px;color:var(--txt0)">IndexedDB / Local</span></div>
+      <div class="res-row" style="border:none"><span class="res-k">MODE</span><span style="font-size:12px;color:var(--txt0)">Offline-First PWA</span></div>
+    </div>
+  </div>
+  <div id="stp-icao" class="panel">
+    <div class="mod">
+      <div class="mod-title" style="display:flex;justify-content:space-between"><span>ICAO DATABASE</span><span id="icao-count" style="color:var(--txt2);font-size:10px">0 records</span></div>
+      <div style="font-size:10px;color:var(--txt2);margin-bottom:10px;font-family:monospace;background:var(--bg0);border:1px solid var(--border);border-radius:6px;padding:8px;white-space:pre">code,name,city,country
+KLSV,Nellis AFB,Las Vegas,NV</div>
+      <div id="icao-drop" style="border:2px dashed var(--border);border-radius:8px;padding:20px;text-align:center;cursor:pointer;margin-bottom:10px">
+        <div style="font-size:24px;color:var(--txt2);margin-bottom:6px">⬆</div>
+        <div style="font-size:10px;letter-spacing:2px;color:var(--txt2)">TAP TO UPLOAD CSV</div>
+      </div>
+      <input type="file" id="icao-csv" accept=".csv,.txt" style="display:none;width:0;height:0;padding:0;margin:0;border:none">
+      <div id="icao-csv-prev" style="display:none;background:var(--bg0);border:1px solid var(--border);border-radius:6px;padding:8px;font-size:11px;color:var(--txt1);margin-bottom:8px;max-height:120px;overflow-y:auto;font-family:monospace;white-space:pre"></div>
+      <div id="icao-csv-stat" style="font-size:10px;margin-bottom:8px"></div>
+      <div id="icao-csv-btns" style="display:none" class="row"><button class="btn acc" id="icao-csv-imp" style="flex:1">IMPORT ALL</button><button class="btn" id="icao-csv-can" style="flex:1;border-color:#ef4444;color:#ef4444">CANCEL</button></div>
+      <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px">
+        <div class="mod-title">ADD SINGLE</div>
+        <div class="row"><input id="icao-code" placeholder="Code" maxlength="4" style="flex:1;text-transform:uppercase;margin-bottom:0"><input id="icao-name" placeholder="Name" style="flex:1;margin-bottom:0"></div>
+        <div class="row" style="margin-top:8px"><input id="icao-city" placeholder="City" style="flex:1;margin-bottom:0"><input id="icao-cty" placeholder="State/Country" style="flex:1;margin-bottom:0"></div>
+        <button class="btn full" id="icao-save" style="margin-top:8px">SAVE</button>
+      </div>
+    </div>
+  </div>
+  <div id="stp-go81" class="panel">
+    <div class="mod">
+      <div class="mod-title" style="display:flex;justify-content:space-between"><span>GO81 DATABASE</span><span id="go81-count" style="color:var(--txt2);font-size:10px">0 records</span></div>
+      <div style="font-size:10px;color:var(--txt2);margin-bottom:10px;font-family:monospace;background:var(--bg0);border:1px solid var(--border);border-radius:6px;padding:8px;white-space:pre">code,name,unit,address
+HELN1,Nellis AFB,99th ABW,Nellis NV</div>
+      <div id="go81-drop" style="border:2px dashed var(--border);border-radius:8px;padding:20px;text-align:center;cursor:pointer;margin-bottom:10px">
+        <div style="font-size:24px;color:var(--txt2);margin-bottom:6px">⬆</div>
+        <div style="font-size:10px;letter-spacing:2px;color:var(--txt2)">TAP TO UPLOAD CSV</div>
+      </div>
+      <input type="file" id="go81-csv" accept=".csv,.txt" style="display:none;width:0;height:0;padding:0;margin:0;border:none">
+      <div id="go81-csv-prev" style="display:none;background:var(--bg0);border:1px solid var(--border);border-radius:6px;padding:8px;font-size:11px;color:var(--txt1);margin-bottom:8px;max-height:120px;overflow-y:auto;font-family:monospace;white-space:pre"></div>
+      <div id="go81-csv-stat" style="font-size:10px;margin-bottom:8px"></div>
+      <div id="go81-csv-btns" style="display:none" class="row"><button class="btn acc" id="go81-csv-imp" style="flex:1">IMPORT ALL</button><button class="btn" id="go81-csv-can" style="flex:1;border-color:#ef4444;color:#ef4444">CANCEL</button></div>
+      <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px">
+        <div class="mod-title">ADD SINGLE</div>
+        <div class="row"><input id="go81-code" placeholder="Code" style="flex:1;text-transform:uppercase;margin-bottom:0"><input id="go81-name" placeholder="Name" style="flex:1;margin-bottom:0"></div>
+        <input id="go81-unit" placeholder="Unit / Organization" style="margin-top:8px">
+        <input id="go81-addr" placeholder="Address / Base">
+        <button class="btn full" id="go81-save">SAVE</button>
+      </div>
+    </div>
+  </div>
+  <div id="stp-tz" class="panel">
+    <div class="mod">
+      <div class="mod-title">CUSTOMIZE TIME ZONES</div>
+      <p style="font-size:12px;color:var(--txt2);margin-bottom:14px;line-height:1.6">Set a label and timezone for each of the 6 slots in OPS.</p>
+      <div id="tz-slots"></div>
+      <button class="btn acc full" id="tz-save">SAVE TIME ZONES</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- #screens -->
+
+<nav id="botnav">
+  <button class="nb on" data-nav="home"><div class="nb-icon">⌂</div><span>HOME</span></button>
+  <button class="nb" data-nav="ops"><div class="nb-icon">◎</div><span>OPS</span></button>
+  <button class="nb" data-nav="tools"><div class="nb-icon">⚙</div><span>TOOLS</span></button>
+  <button class="nb" data-nav="tracker"><div class="nb-icon">◈</div><span>TRACKER</span></button>
+  <button class="nb" data-nav="notes"><div class="nb-icon">≡</div><span>NOTES</span></button>
+  <button class="nb" data-nav="settings"><div class="nb-icon">⚙</div><span>SETTINGS</span></button>
+</nav>
+
+<!-- MODALS -->
+<div class="modal" id="shift-modal">
+  <div class="modal-box">
+    <div class="modal-title">SHIFT NOTE</div>
+    <textarea id="shift-input" rows="6" placeholder="Enter shift note..." style="width:100%;background:var(--bg0);border:1px solid var(--border);border-radius:8px;color:var(--txt0);font-family:monospace;font-size:13px;padding:10px 12px;resize:vertical;margin-bottom:12px;line-height:1.5"></textarea>
+    <div class="row"><button class="btn" id="shift-cancel" style="flex:1">CANCEL</button><button class="btn acc" id="shift-save-btn" style="flex:1">SAVE</button></div>
+  </div>
+</div>
+<div class="modal" id="confirm-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="conf-title">CONFIRM</div>
+    <div class="modal-msg" id="conf-msg"></div>
+    <div class="row"><button class="btn" id="conf-cancel" style="flex:1">CANCEL</button><button class="btn" id="conf-ok" style="flex:1;border-color:#ef4444;color:#ef4444">CONFIRM</button></div>
+  </div>
+</div>
+<div class="modal" id="edit-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="edit-title">EDIT</div>
+    <input id="edit-ttl" style="width:100%;background:var(--bg0);border:1px solid var(--border);border-radius:8px;color:var(--txt0);font-family:monospace;font-size:14px;padding:11px 12px;margin-bottom:8px" placeholder="Title...">
+    <textarea id="edit-body" rows="6" style="width:100%;background:var(--bg0);border:1px solid var(--border);border-radius:8px;color:var(--txt0);font-family:monospace;font-size:13px;padding:10px 12px;resize:vertical;margin-bottom:8px;line-height:1.5" placeholder="Content..."></textarea>
+    <input id="edit-tags" style="width:100%;background:var(--bg0);border:1px solid var(--border);border-radius:8px;color:var(--txt0);font-family:monospace;font-size:14px;padding:11px 12px;margin-bottom:12px;display:none" placeholder="Tags...">
+    <div class="row"><button class="btn" id="edit-cancel" style="flex:1">CANCEL</button><button class="btn acc" id="edit-ok" style="flex:1">SAVE</button></div>
+  </div>
+</div>
+<div id="toast">...</div>
+
+<script>
+'use strict';
+
+// ── UTILS ──────────────────────────────────────────────────────
+const $  = id => document.getElementById(id);
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const p2  = n => String(n).padStart(2,'0');
+const fmsDur = ms => { const t=Math.floor(ms/1000); return `${p2(Math.floor(t/3600))}:${p2(Math.floor((t%3600)/60))}:${p2(t%60)}`; };
+const today  = () => new Date().toISOString().slice(0,10);
+const dlBlob = (blob,name) => { const u=URL.createObjectURL(blob),a=document.createElement('a'); a.href=u; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(u),1000); };
+const stamp  = () => today().replace(/-/g,'');
+
+let _toastT = null;
+function toast(msg, type='') {
+  const el = $('toast');
+  el.textContent = msg;
+  el.className = type ? 'show ' + type : 'show';
+  clearTimeout(_toastT);
+  _toastT = setTimeout(() => el.className = '', 2600);
+}
+
+let _confCb = null;
+function showModal(id)  { $(id).className = 'modal show'; }
+function hideModal(id)  { $(id).className = 'modal'; }
+function popConfirm(title, msg, cb) {
+  _confCb = cb;
+  $('conf-title').textContent = title;
+  $('conf-msg').textContent = msg;
+  showModal('confirm-modal');
+}
+
+// ── JULIAN ─────────────────────────────────────────────────────
+const J = {
+  doy(d) { const s=new Date(Date.UTC(d.getUTCFullYear(),0,0)); return Math.floor((Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())-s)/86400000); },
+  afj(d) { return String(d.getUTCFullYear()).slice(-2)+String(J.doy(d)).padStart(3,'0'); },
+  wk(d)  { const x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); x.setUTCDate(x.getUTCDate()+4-(x.getUTCDay()||7)); const ys=new Date(Date.UTC(x.getUTCFullYear(),0,1)); return Math.ceil(((x-ys)/86400000+1)/7); },
+  fmt(d) { const dy=['SUN','MON','TUE','WED','THU','FRI','SAT'],mo=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']; return `${dy[d.getUTCDay()]} ${p2(d.getUTCDate())} ${mo[d.getUTCMonth()]} ${d.getUTCFullYear()}`; },
+  leap(y){ return (y%4===0&&y%100!==0)||(y%400===0); },
+  fromDOY(y,day){ return new Date(Date.UTC(y,0,day)); }
+};
+
+// ── CONVERTERS ─────────────────────────────────────────────────
+const C = {
+  f: n => isNaN(n) ? '—' : parseFloat(n.toPrecision(5)).toString(),
+  html: rows => rows.map(r=>`<div class="conv-line"><span class="conv-lbl">${r.l}</span><span class="conv-n">${r.v} <span style="font-size:10px;color:var(--txt2)">${r.u}</span></span></div>`).join(''),
+  length:   v => [{l:'Centimeters',v:C.f(v*2.54),u:'cm'},{l:'Feet',v:C.f(v/12),u:'ft'},{l:'Millimeters',v:C.f(v*25.4),u:'mm'},{l:'Meters',v:C.f(v*0.0254),u:'m'}],
+  weight:   v => [{l:'Kilograms',v:C.f(v*0.453592),u:'kg'},{l:'Ounces',v:C.f(v*16),u:'oz'},{l:'Grams',v:C.f(v*453.592),u:'g'}],
+  temp:     v => [{l:'Celsius',v:C.f((v-32)*5/9),u:'°C'},{l:'Kelvin',v:C.f((v-32)*5/9+273.15),u:'K'},{l:'Rankine',v:C.f(v+459.67),u:'°R'}],
+  fuel:     v => [{l:'Liters',v:C.f(v*3.78541),u:'L'},{l:'Lbs (JP-8)',v:C.f(v*6.7),u:'lbs'},{l:'Imp. Gal',v:C.f(v*0.832674),u:'imp'}],
+  pressure: v => [{l:'Kilopascals',v:C.f(v*6.89476),u:'kPa'},{l:'Bar',v:C.f(v*0.0689476),u:'bar'},{l:'InHg',v:C.f(v*2.03602),u:'inHg'}],
+  torque:   v => [{l:'Newton-Meters',v:C.f(v*1.35582),u:'N·m'},{l:'In-Lbs',v:C.f(v*12),u:'in·lb'},{l:'Kgf-m',v:C.f(v*0.138255),u:'kgf·m'}],
+};
+
+// ── CLOCK ──────────────────────────────────────────────────────
+let _shiftStart = null;
+function tick() {
+  const now = new Date();
+  const zs  = now.toISOString().slice(11,19) + ' Z';
+  const ls  = now.toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  $('topbar-zulu').textContent = zs;
+  $('h-local').textContent = ls;
+  $('h-zulu').textContent  = now.toISOString().slice(11,19);
+  const jul = J.afj(now);
+  $('h-julian').textContent = jul;
+  $('h-date').textContent   = J.fmt(now);
+  $('h-doy').textContent    = `DAY ${J.doy(now)} / ${J.leap(now.getUTCFullYear())?366:365}`;
+  $('jn-date').textContent  = J.fmt(now);
+  $('jn-jul').textContent   = jul;
+  $('jn-doy').textContent   = `${J.doy(now)} of ${J.leap(now.getUTCFullYear())?366:365}`;
+  $('jn-wk').textContent    = J.wk(now);
+  // TZ grid (every 30s)
+  if (now.getSeconds() % 30 === 0) renderTZGrid();
+  // Shift elapsed
+  if (_shiftStart) $('shift-disp').textContent = fmsDur(Date.now()-_shiftStart);
+}
+
+// ── TIMERS ─────────────────────────────────────────────────────
+let _sw={run:false,start:0,elapsed:0,laps:0,int:null};
+function swToggle() {
+  if (_sw.run) {
+    _sw.elapsed += Date.now()-_sw.start; clearInterval(_sw.int); _sw.run=false;
+    $('sw-start').textContent='RESUME';
+  } else {
+    _sw.start=Date.now(); _sw.run=true; $('sw-start').textContent='PAUSE';
+    _sw.int=setInterval(()=>{ $('sw-disp').textContent=fmsDur(_sw.elapsed+Date.now()-_sw.start); },100);
+  }
+}
+function swLap() {
+  if (!_sw.run && !_sw.elapsed) return;
+  _sw.laps++; const t=_sw.elapsed+(_sw.run?Date.now()-_sw.start:0);
+  const d=document.createElement('div');
+  d.style.cssText='display:flex;justify-content:space-between;padding:4px 6px;border-bottom:1px solid var(--border);font-size:12px;color:var(--txt1)';
+  d.innerHTML=`<span>LAP ${_sw.laps}</span><span>${fmsDur(t)}</span>`;
+  $('sw-laps').insertBefore(d,$('sw-laps').firstChild);
+}
+function swReset() {
+  clearInterval(_sw.int); _sw={run:false,start:0,elapsed:0,laps:0,int:null};
+  $('sw-disp').textContent='00:00:00'; $('sw-start').textContent='START'; $('sw-laps').innerHTML='';
+}
+
+let _cd={run:false,rem:0,int:null};
+function cdToggle() {
+  if (_cd.run) { clearInterval(_cd.int); _cd.run=false; $('cd-start').textContent='RESUME'; return; }
+  if (!_cd.rem) {
+    const h=parseInt($('cd-h').value)||0, m=parseInt($('cd-m').value)||0, s=parseInt($('cd-s').value)||0;
+    _cd.rem=(h*3600+m*60+s)*1000;
+  }
+  if (!_cd.rem) { toast('Set a duration.','err'); return; }
+  _cd.run=true; $('cd-start').textContent='PAUSE';
+  _cd.int=setInterval(()=>{
+    _cd.rem-=500; if(_cd.rem<=0){_cd.rem=0;clearInterval(_cd.int);_cd.run=false;$('cd-start').textContent='START';toast('⏰ TIMER EXPIRED','ok');}
+    $('cd-disp').textContent=fmsDur(_cd.rem);
+  },500);
+}
+function cdReset() {
+  clearInterval(_cd.int); _cd={run:false,rem:0,int:null};
+  $('cd-disp').textContent='00:00:00'; $('cd-start').textContent='START';
+}
+function setShift() {
+  const v=$('shift-in').value; if(!v){toast('Select shift start time.','err');return;}
+  const [h,m]=v.split(':').map(Number); const s=new Date(); s.setHours(h,m,0,0);
+  if(s>new Date()) s.setDate(s.getDate()-1);
+  _shiftStart=s.getTime();
+  const e8=new Date(_shiftStart+8*3600000), e12=new Date(_shiftStart+12*3600000);
+  $('shift-ends').textContent=`8-HR: ${p2(e8.getHours())}:${p2(e8.getMinutes())} · 12-HR: ${p2(e12.getHours())}:${p2(e12.getMinutes())}`;
+  toast('Shift timer set.','ok');
+}
+
+// ── JULIAN CONVERTERS ──────────────────────────────────────────
+function d2j() {
+  const v=$('d2j-in').value; if(!v){toast('Select a date.','err');return;}
+  const d=new Date(v+'T00:00:00Z');
+  const r=$('d2j-res'); r.className='res-block show';
+  r.innerHTML=`<div class="res-row"><span class="res-k">AF JULIAN</span><span class="res-v">${J.afj(d)}</span></div>
+    <div class="res-row"><span class="res-k">DAY OF YEAR</span><span class="res-v">${J.doy(d)}</span></div>
+    <div class="res-row" style="border:none"><span class="res-k">WEEK #</span><span class="res-v">${J.wk(d)}</span></div>`;
+}
+function j2d() {
+  const yr=parseInt($('j2d-yr').value), day=parseInt($('j2d-day').value);
+  if(!yr||!day||day<1||day>366){toast('Enter valid year and day.','err');return;}
+  const d=J.fromDOY(yr,day); const r=$('j2d-res'); r.className='res-block show';
+  r.innerHTML=`<div class="res-row"><span class="res-k">DATE</span><span class="res-v">${J.fmt(d)}</span></div>
+    <div class="res-row" style="border:none"><span class="res-k">ISO</span><span class="res-v">${d.toISOString().slice(0,10)}</span></div>`;
+}
+
+// ── DATABASE ───────────────────────────────────────────────────
+let _idb = null;
+const STORES = {settings:{keyPath:'key'},icao:{keyPath:'code'},go81:{keyPath:'code'},
+  favorites:{keyPath:'id',autoIncrement:true},tracker:{keyPath:'id',autoIncrement:true},
+  notes:{keyPath:'id',autoIncrement:true},reference:{keyPath:'id',autoIncrement:true},
+  acronyms:{keyPath:'id',autoIncrement:true}};
+
+function dbOpen() {
+  return new Promise((res,rej) => {
+    if (_idb) return res(_idb);
+    const r = indexedDB.open('flightline_v2', 1);
+    r.onupgradeneeded = e => { const db=e.target.result; Object.entries(STORES).forEach(([n,o])=>{if(!db.objectStoreNames.contains(n))db.createObjectStore(n,o);}); };
+    r.onsuccess = e => { _idb=e.target.result; res(_idb); };
+    r.onerror   = e => rej(e.target.error);
+  });
+}
+function dbGet(store,key)  { return dbOpen().then(db=>new Promise((res,rej)=>{const r=db.transaction(store,'readonly').objectStore(store).get(key);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);})); }
+function dbAll(store)      { return dbOpen().then(db=>new Promise((res,rej)=>{const r=db.transaction(store,'readonly').objectStore(store).getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);})); }
+function dbPut(store,val)  { return dbOpen().then(db=>new Promise((res,rej)=>{const r=db.transaction(store,'readwrite').objectStore(store).put(val);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);})); }
+function dbDel(store,key)  { return dbOpen().then(db=>new Promise((res,rej)=>{const r=db.transaction(store,'readwrite').objectStore(store).delete(key);r.onsuccess=()=>res();r.onerror=()=>rej(r.error);})); }
+function dbClear(store)    { return dbOpen().then(db=>new Promise((res,rej)=>{const r=db.transaction(store,'readwrite').objectStore(store).clear();r.onsuccess=()=>res();r.onerror=()=>rej(r.error);})); }
+function dbBulk(store,items){ return dbOpen().then(db=>new Promise((res,rej)=>{const tx=db.transaction(store,'readwrite');const s=tx.objectStore(store);items.forEach(i=>s.put(i));tx.oncomplete=res;tx.onerror=rej;})); }
+async function dbExport()  { const r={}; for(const n of Object.keys(STORES)) r[n]=await dbAll(n); return r; }
+async function dbImport(d) { for(const [n,items] of Object.entries(d)){if(!STORES[n])continue;await dbClear(n);if(items?.length)await dbBulk(n,items);} }
+async function dbClearAll(){ for(const n of Object.keys(STORES)) await dbClear(n); }
+
+// ── SEED DATA ──────────────────────────────────────────────────
+const SEED_ICAO=[
+  {code:'KLSV',name:'Nellis AFB',city:'Las Vegas',country:'NV'},
+  {code:'KEDW',name:'Edwards AFB',city:'Edwards',country:'CA'},
+  {code:'KBAD',name:'Barksdale AFB',city:'Shreveport',country:'LA'},
+  {code:'KHIF',name:'Hill AFB',city:'Ogden',country:'UT'},
+  {code:'KSKA',name:'Fairchild AFB',city:'Spokane',country:'WA'},
+  {code:'KWRB',name:'Robins AFB',city:'Warner Robins',country:'GA'},
+  {code:'KVAD',name:'Moody AFB',city:'Valdosta',country:'GA'},
+  {code:'KLFI',name:'Langley AFB',city:'Hampton',country:'VA'},
+  {code:'KRCA',name:'Ellsworth AFB',city:'Box Elder',country:'SD'},
+  {code:'KFFO',name:'Wright-Patterson AFB',city:'Dayton',country:'OH'},
+  {code:'KDYS',name:'Dyess AFB',city:'Abilene',country:'TX'},
+  {code:'RJTY',name:'Yokota AB',city:'Fussa',country:'Japan'},
+  {code:'RKSO',name:'Osan AB',city:'Pyeongtaek',country:'S. Korea'},
+  {code:'RKJK',name:'Kunsan AB',city:'Gunsan',country:'S. Korea'},
+  {code:'OBBI',name:'Bahrain Intl',city:'Manama',country:'Bahrain'},
+  {code:'OKBK',name:'Kuwait Intl',city:'Kuwait City',country:'Kuwait'},
+];
+const SEED_GO81=[
+  {code:'HELN1',name:'Nellis AFB',unit:'99th ABW',address:'Nellis AFB, NV'},
+  {code:'HEDW1',name:'Edwards AFB',unit:'412th TW',address:'Edwards AFB, CA'},
+  {code:'HHIF1',name:'Hill AFB',unit:'75th ABW',address:'Hill AFB, UT'},
+  {code:'HWRB1',name:'Robins AFB',unit:'78th ABW',address:'Robins AFB, GA'},
+  {code:'HVAD1',name:'Moody AFB',unit:'23rd Wing',address:'Moody AFB, GA'},
+  {code:'HSKA1',name:'Fairchild AFB',unit:'92nd ARW',address:'Fairchild AFB, WA'},
+  {code:'HLFI1',name:'Langley AFB',unit:'1st FW',address:'Langley AFB, VA'},
+];
+const SEED_REF=[
+  {id:1,title:'Red X Symbols',body:'Red X — Aircraft grounded, DO NOT FLY\nRed Dash (/) — Limits flight\nRed Diagonal — Removed/missing equipment\n\nOnly Pro Super or higher can clear Red X.',tags:'forms,781,red x'},
+  {id:2,title:'EPB Bullet Format',body:'Action — Impact — Result\n\nExample:\n"Executed 47 sorties supporting Red Flag 23-1; maintained 98% MC rate — ensured mission success for 200+ personnel"\n\nMax 2 lines on paper.',tags:'EPB,performance'},
+  {id:3,title:'TO Hierarchy',body:'1. AF-level TOs\n2. MDS-specific TOs\n3. Job Guide / WC\n4. Part I/II/III\n\nAlways use latest revision. Check ETIMS for currency.',tags:'TO,maintenance'},
+  {id:4,title:'Lock/Tag/Try (LO/TO)',body:'1. NOTIFY supervisor\n2. SHUT DOWN energy source\n3. ISOLATE all energy forms\n4. LOCK OUT with personal lock\n5. TAG OUT on lockout device\n6. TRY to activate — verify zero energy',tags:'safety,LOTO'},
+  {id:5,title:'G081 Common Codes',body:'WUC — Work Unit Code\nJCN — Job Control Number\nWO — Work Order\nCCN — Component Control Number\nTCTO — Time Compliance Tech Order',tags:'G081,IMDS'},
+  {id:6,title:'FOD Walk',body:'Conducted at shift start or before flight ops\n- Walk abreast, arm-length spacing\n- Check surfaces, drains, engine inlets\n- Document finds in FOD log',tags:'safety,FOD'},
+];
+const SEED_ACRO=[
+  {id:1,abbr:'ABM',def:'Air Battle Manager'},
+  {id:2,abbr:'ACC',def:'Assistant Crew Chief'},
+  {id:3,abbr:'ACE',def:'Agile Combat Employment'},
+  {id:4,abbr:'AD',def:'Active Duty'},
+  {id:5,abbr:'ADCON',def:'Administrative Control'},
+  {id:6,abbr:'AFCDA',def:'Air Force Career Development Academy'},
+  {id:7,abbr:'AFCFM',def:'Air Force Career Field Manager'},
+  {id:8,abbr:'AF-COOL',def:'Air Force Credentialing Opportunities On-Line'},
+  {id:9,abbr:'AFE',def:'Aircrew Flight Equipment'},
+  {id:10,abbr:'AFFORGEN',def:'Air Force Force Generation'},
+  {id:11,abbr:'AFI',def:'Air Force Instruction'},
+  {id:12,abbr:'AFJQS',def:'Air Force Job Qualification Standard'},
+  {id:13,abbr:'AFMAN',def:'Air Force Manual'},
+  {id:14,abbr:'AFS',def:'Air Force Specialty'},
+  {id:15,abbr:'AFSC',def:'Air Force Specialty Code'},
+  {id:16,abbr:'AFSO21',def:'Air Force Smart Operations for the 21st Century'},
+  {id:17,abbr:'AGE',def:'Aerospace Ground Equipment'},
+  {id:18,abbr:'AGR',def:'Active Guard Reserve'},
+  {id:19,abbr:'AI',def:'Artificial Intelligence'},
+  {id:20,abbr:'ALQ',def:'Airman Leadership Qualities'},
+  {id:21,abbr:'ALS',def:'Airman Leadership School'},
+  {id:22,abbr:'AMT',def:'Aviation Maintenance Technician'},
+  {id:23,abbr:'AMXS',def:'Aircraft Maintenance Squadron'},
+  {id:24,abbr:'AOC',def:'Air Operations Center'},
+  {id:25,abbr:'AOR',def:'Area of Responsibility'},
+  {id:26,abbr:'A&P',def:'Airframe and Powerplant'},
+  {id:27,abbr:'APF',def:'Appropriated Funds'},
+  {id:28,abbr:'ART',def:'Air Reserve Technician'},
+  {id:29,abbr:'AT',def:'Annual Tour'},
+  {id:30,abbr:'ATC',def:'Air Traffic Control'},
+  {id:31,abbr:'ATO',def:'Air Tasking Order'},
+  {id:32,abbr:'BMT',def:'Basic Military Training'},
+  {id:33,abbr:'BNR',def:'By Name Request'},
+  {id:34,abbr:'BPO',def:'Basic Postflight'},
+  {id:35,abbr:'BTZ',def:'Below-the-Zone'},
+  {id:36,abbr:'C2',def:'Command and Control'},
+  {id:37,abbr:'C4ISR',def:'Command, Control, Communications, Computers, Intelligence, Surveillance and Reconnaissance'},
+  {id:38,abbr:'CANN',def:'Cannibalization'},
+  {id:39,abbr:'CAOC',def:'Combined Air Operations Center'},
+  {id:40,abbr:'CAS',def:'Close Air Support'},
+  {id:41,abbr:'CAT',def:'Crisis Action Team'},
+  {id:42,abbr:'CATM',def:'Combat Arms Training and Maintenance'},
+  {id:43,abbr:'CBRN',def:'Chemical, Biological, Radiological, and Nuclear'},
+  {id:44,abbr:'CBT',def:'Computer Based Training'},
+  {id:45,abbr:'CCAF',def:'Community College of the Air Force'},
+  {id:46,abbr:'CCIP',def:'Commander\'s Inspection Program'},
+  {id:47,abbr:'CDI',def:'Commander Directed Investigation'},
+  {id:48,abbr:'CDP',def:'Career Development Plan'},
+  {id:49,abbr:'CEM',def:'Chief Enlisted Manager'},
+  {id:50,abbr:'CFETP',def:'Career Field Education and Training Plan'},
+  {id:51,abbr:'CFM',def:'Career Field Manager'},
+  {id:52,abbr:'CLA',def:'Chief Master Sergeant Leadership Academy'},
+  {id:53,abbr:'CLC',def:'Chief Master Sergeant Leadership Course'},
+  {id:54,abbr:'CND',def:'Could Not Duplicate'},
+  {id:55,abbr:'COA',def:'Course of Action'},
+  {id:56,abbr:'CODEL',def:'Congressional Delegation'},
+  {id:57,abbr:'CONOPS',def:'Concept of Operations'},
+  {id:58,abbr:'CONUS',def:'Continental United States'},
+  {id:59,abbr:'COOP',def:'Continuity of Operations'},
+  {id:60,abbr:'CPI',def:'Continuous Process Improvement'},
+  {id:61,abbr:'CPR',def:'Cardiopulmonary Resuscitation'},
+  {id:62,abbr:'CSAR',def:'Combat Search and Rescue'},
+  {id:63,abbr:'CSIL',def:'Customer Service Information Line'},
+  {id:64,abbr:'CTK',def:'Composite Tool Kit'},
+  {id:65,abbr:'CTS',def:'Course Training Standard'},
+  {id:66,abbr:'CUI',def:'Controlled Unclassified Information'},
+  {id:67,abbr:'DAFECD',def:'Department of the Air Force Enlisted Classification Directory'},
+  {id:68,abbr:'DAFI',def:'Department of the Air Force Instruction'},
+  {id:69,abbr:'DAFMAN',def:'Department of the Air Force Manual'},
+  {id:70,abbr:'DCC',def:'Dedicated Crew Chief'},
+  {id:71,abbr:'DEOCS',def:'Defense Equal Opportunity Climate Survey'},
+  {id:72,abbr:'DG',def:'Distinguished Graduate'},
+  {id:73,abbr:'DHA',def:'Defense Health Agency'},
+  {id:74,abbr:'DIFM',def:'Due In From Maintenance'},
+  {id:75,abbr:'DSG',def:'Drill Status Guardsman'},
+  {id:76,abbr:'DV',def:'Distinguished Visitor'},
+  {id:77,abbr:'EKIA',def:'Enemy Killed in Action'},
+  {id:78,abbr:'EOC',def:'Emergency Operations Center'},
+  {id:79,abbr:'EOD',def:'Explosive Ordnance Disposal'},
+  {id:80,abbr:'EOR',def:'End of Runway'},
+  {id:81,abbr:'EOY',def:'End of Year'},
+  {id:82,abbr:'EPB',def:'Enlisted Performance Brief'},
+  {id:83,abbr:'EPME',def:'Enlisted Professional Military Education'},
+  {id:84,abbr:'ETIC',def:'Estimated Time In Commission'},
+  {id:85,abbr:'EW',def:'Electronic Warfare'},
+  {id:86,abbr:'FAM',def:'Functional Area Manager'},
+  {id:87,abbr:'FCC',def:'Flying Crew Chief'},
+  {id:88,abbr:'FHP',def:'Flying Hour Program'},
+  {id:89,abbr:'FMC',def:'Fully Mission Capable'},
+  {id:90,abbr:'FOB',def:'Forward Operating Base'},
+  {id:91,abbr:'FOC',def:'Full Operational Capability'},
+  {id:92,abbr:'FOL',def:'Forward Operating Location'},
+  {id:93,abbr:'FPCON',def:'Force Protection Conditions'},
+  {id:94,abbr:'FTD',def:'Field Training Detachment'},
+  {id:95,abbr:'FTEC',def:'First Term Enlisted Course'},
+  {id:96,abbr:'FTU',def:'Formal Training Unit'},
+  {id:97,abbr:'G081',def:'Mobility Air Forces Logistics System'},
+  {id:98,abbr:'GPA',def:'Grade Point Average'},
+  {id:99,abbr:'GPS',def:'Global Positioning System'},
+  {id:100,abbr:'GSU',def:'Geographically Separated Unit'},
+  {id:101,abbr:'GTC',def:'Government Travel Card'},
+  {id:102,abbr:'HCI',def:'Home Station Check Inspection'},
+  {id:103,abbr:'ICAO',def:'International Civil Aviation Organization'},
+  {id:104,abbr:'ICW',def:'Interactive Courseware'},
+  {id:105,abbr:'IDE',def:'Intermediate Developmental Education'},
+  {id:106,abbr:'IDT',def:'Inactive Duty Training'},
+  {id:107,abbr:'IED',def:'Improvised Explosive Device'},
+  {id:108,abbr:'IMA',def:'Individual Mobilization Augmentee'},
+  {id:109,abbr:'IMDS',def:'Integrated Maintenance Data System'},
+  {id:110,abbr:'IOC',def:'Initial Operational Capability'},
+  {id:111,abbr:'IP',def:'Instructor Pilot'},
+  {id:112,abbr:'ISD',def:'Instructional System Development'},
+  {id:113,abbr:'ISO',def:'Isochronal Inspection'},
+  {id:114,abbr:'ISR',def:'Intelligence, Surveillance, and Reconnaissance'},
+  {id:115,abbr:'IT',def:'Information Technology'},
+  {id:116,abbr:'ITP',def:'Individual Training Plan'},
+  {id:117,abbr:'JADC2',def:'Joint All Domain Command and Control'},
+  {id:118,abbr:'JCN',def:'Job Control Number'},
+  {id:119,abbr:'JQS',def:'Job Qualification Standard'},
+  {id:120,abbr:'JROTC',def:'Junior Reserve Officer Training Corps'},
+  {id:121,abbr:'JSAMTCC',def:'Joint Service Aviation Maintenance Technician Certification Council'},
+  {id:122,abbr:'KIA',def:'Killed in Action'},
+  {id:123,abbr:'LOE',def:'Line of Effort'},
+  {id:124,abbr:'L&R',def:'Launch and Recovery'},
+  {id:125,abbr:'LRS',def:'Logistics Readiness Squadron'},
+  {id:126,abbr:'MAF',def:'Maintenance Action Form'},
+  {id:127,abbr:'MCA',def:'Multi-Capable Airmen'},
+  {id:128,abbr:'MDS',def:'Mission Design Series'},
+  {id:129,abbr:'MFM',def:'MAJCOM Functional Manager'},
+  {id:130,abbr:'MICAP',def:'Mission Impaired Capability Awaiting Parts'},
+  {id:131,abbr:'MILCON',def:'Military Construction'},
+  {id:132,abbr:'MILPDS',def:'Military Personnel Data System'},
+  {id:133,abbr:'MMCL',def:'MAJCOM Mandatory Course List'},
+  {id:134,abbr:'MOA',def:'Memorandum of Agreement'},
+  {id:135,abbr:'MOC',def:'Maintenance Operations Center'},
+  {id:136,abbr:'MOU',def:'Memorandum of Understanding'},
+  {id:137,abbr:'MTF',def:'Medical Treatment Facility'},
+  {id:138,abbr:'MTL',def:'Master Training List'},
+  {id:139,abbr:'MWR',def:'Morale, Welfare, and Recreation'},
+  {id:140,abbr:'MX',def:'Maintenance'},
+  {id:141,abbr:'MXS',def:'Maintenance Squadron'},
+  {id:142,abbr:'NC3',def:'Nuclear Command, Control, and Communications'},
+  {id:143,abbr:'NCOA',def:'Noncommissioned Officer Academy'},
+  {id:144,abbr:'NCOIC',def:'Noncommissioned Officer In Charge'},
+  {id:145,abbr:'NCR',def:'National Capital Region'},
+  {id:146,abbr:'NDAA',def:'National Defense Authorization Act'},
+  {id:147,abbr:'NDS',def:'National Defense Strategy'},
+  {id:148,abbr:'NEO',def:'Noncombatant Evacuation Operation'},
+  {id:149,abbr:'NFF',def:'No Fault Found'},
+  {id:150,abbr:'NIPR',def:'Non-secure Internet Protocol Router'},
+  {id:151,abbr:'NMC',def:'Not Mission Capable'},
+  {id:152,abbr:'NMCB',def:'Not Mission Capable Both (Maintenance & Supply)'},
+  {id:153,abbr:'NMCM',def:'Not Mission Capable Maintenance'},
+  {id:154,abbr:'NMCS',def:'Not Mission Capable Supply'},
+  {id:155,abbr:'NMCU',def:'Not Mission Capable Unscheduled Maintenance'},
+  {id:156,abbr:'OAR',def:'Occupational Analysis Report'},
+  {id:157,abbr:'OCO',def:'Overseas Contingency Operations'},
+  {id:158,abbr:'OCONUS',def:'Outside Continental United States'},
+  {id:159,abbr:'OJT',def:'On-the-Job Training'},
+  {id:160,abbr:'O&M',def:'Operations and Maintenance'},
+  {id:161,abbr:'OPLAN',def:'Operations Plan'},
+  {id:162,abbr:'OPS CHECK',def:'Operational Check'},
+  {id:163,abbr:'OPSEC',def:'Operational Security'},
+  {id:164,abbr:'OTS',def:'Officer Training School'},
+  {id:165,abbr:'PCS',def:'Permanent Change of Station'},
+  {id:166,abbr:'PDE',def:'Primary Developmental Education'},
+  {id:167,abbr:'PE',def:'Phase Equivalent'},
+  {id:168,abbr:'PFA',def:'Physical Fitness Assessment'},
+  {id:169,abbr:'PMC',def:'Partially Mission Capable'},
+  {id:170,abbr:'PMCB',def:'Partially Mission Capable Both (Maintenance & Supply)'},
+  {id:171,abbr:'PMCM',def:'Partially Mission Capable Maintenance'},
+  {id:172,abbr:'PMCS',def:'Partially Mission Capable Supply'},
+  {id:173,abbr:'PME',def:'Professional Military Education'},
+  {id:174,abbr:'PO',def:'Periodic Inspection'},
+  {id:175,abbr:'POC',def:'Point of Contact'},
+  {id:176,abbr:'PR',def:'Preflight'},
+  {id:177,abbr:'PT',def:'Physical Training'},
+  {id:178,abbr:'QA',def:'Quality Assurance'},
+  {id:179,abbr:'QoL',def:'Quality of Life'},
+  {id:180,abbr:'QT',def:'Qualification Training'},
+  {id:181,abbr:'QTP',def:'Qualification Training Package'},
+  {id:182,abbr:'REMIS',def:'Reliability and Maintainability Information System'},
+  {id:183,abbr:'ROE',def:'Rules of Engagement'},
+  {id:184,abbr:'ROTC',def:'Reserve Officer Training Corps'},
+  {id:185,abbr:'RPA',def:'Remotely Piloted Aircraft'},
+  {id:186,abbr:'R&R',def:'Remove and Replace'},
+  {id:187,abbr:'RSP',def:'Readiness Spares Package'},
+  {id:188,abbr:'RTOK',def:'Removed, Tested OK'},
+  {id:189,abbr:'RTT',def:'Right Time Training'},
+  {id:190,abbr:'SAPR',def:'Sexual Assault Prevention and Response'},
+  {id:191,abbr:'SCIF',def:'Sensitive Compartmented Information Facility'},
+  {id:192,abbr:'SDE',def:'Senior Developmental Education'},
+  {id:193,abbr:'SEI',def:'Special Equipment Identifier'},
+  {id:194,abbr:'SERE',def:'Survival, Evasion, Resistance, Escape'},
+  {id:195,abbr:'SIPR',def:'Secret Internet Protocol Router'},
+  {id:196,abbr:'SKT',def:'Specialty Knowledge Tests'},
+  {id:197,abbr:'SME',def:'Subject Matter Expert'},
+  {id:198,abbr:'SNCOA',def:'Senior Noncommissioned Officer Academy'},
+  {id:199,abbr:'SOF',def:'Special Operations Forces'},
+  {id:200,abbr:'SOP',def:'Standard Operating Procedure'},
+  {id:201,abbr:'SOS',def:'Squadron Officer School'},
+  {id:202,abbr:'STEM',def:'Science, Technology, Engineering, and Mathematics'},
+  {id:203,abbr:'STRT',def:'Specialty Training Requirements Team'},
+  {id:204,abbr:'STS',def:'Specialty Training Standard'},
+  {id:205,abbr:'TACP',def:'Tactical Air Control Party'},
+  {id:206,abbr:'TCCC',def:'Tactical Combat Casualty Care'},
+  {id:207,abbr:'TCTO',def:'Time Compliance Technical Order'},
+  {id:208,abbr:'TD',def:'Training Detachment'},
+  {id:209,abbr:'TDY',def:'Temporary Duty'},
+  {id:210,abbr:'TFI',def:'Total Force Integration'},
+  {id:211,abbr:'TH',def:'Thru Flight'},
+  {id:212,abbr:'TO',def:'Technical Order'},
+  {id:213,abbr:'TPM',def:'Training Pipeline Manager'},
+  {id:214,abbr:'TR',def:'Training Resource'},
+  {id:215,abbr:'TS',def:'Top Secret'},
+  {id:216,abbr:'TTP',def:'Tactics, Techniques, and Procedures'},
+  {id:217,abbr:'UCI',def:'Unit Compliance Inspection'},
+  {id:218,abbr:'UCMJ',def:'Uniform Code of Military Justice'},
+  {id:219,abbr:'UEI',def:'Unit Effectiveness Inspection'},
+  {id:220,abbr:'UGT',def:'Upgrade Training'},
+  {id:221,abbr:'UTA',def:'Unit Training Assembly'},
+  {id:222,abbr:'UTC',def:'Unit Type Code'},
+  {id:223,abbr:'UXO',def:'Unexploded Ordnance'},
+  {id:224,abbr:'WAPS',def:'Weighted Airman Promotion System'},
+  {id:225,abbr:'WRM',def:'War Reserve Materiel'},
+  {id:226,abbr:'WUC',def:'Work Unit Code'},
+  {id:227,abbr:'XAB',def:'Expeditionary Airbase'}
+];
+
+async function seedIfEmpty() {
+  const [i,g,r,a] = await Promise.all([dbAll('icao'),dbAll('go81'),dbAll('reference'),dbAll('acronyms')]);
+  if (!i.length) await dbBulk('icao', SEED_ICAO);
+  if (!g.length) await dbBulk('go81', SEED_GO81);
+  if (!r.length) await dbBulk('reference', SEED_REF);
+  if (!a.length) await dbBulk('acronyms', SEED_ACRO);
+}
+
+// ── NAVIGATION ─────────────────────────────────────────────────
+function navTo(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
+  const scr = $('s-' + screen);
+  if (scr) scr.classList.add('active');
+  const btn = document.querySelector(`.nb[data-nav="${screen}"]`);
+  if (btn) btn.classList.add('on');
+}
+
+// ── TIME ZONES ─────────────────────────────────────────────────
+const TZ_LIST = [
+  {l:'Local Device',z:'LOCAL'},{l:'Zulu (UTC)',z:'UTC'},
+  {l:'Eastern (ET)',z:'America/New_York'},{l:'Central (CT)',z:'America/Chicago'},
+  {l:'Mountain (MT)',z:'America/Denver'},{l:'Pacific (PT)',z:'America/Los_Angeles'},
+  {l:'Alaska',z:'America/Anchorage'},{l:'Hawaii',z:'Pacific/Honolulu'},
+  {l:'UK / London',z:'Europe/London'},{l:'Germany / Ramstein',z:'Europe/Berlin'},
+  {l:'Turkey / Incirlik',z:'Europe/Istanbul'},{l:'UAE / Al Dhafra',z:'Asia/Dubai'},
+  {l:'Qatar / Al Udeid',z:'Asia/Qatar'},{l:'Kuwait',z:'Asia/Kuwait'},
+  {l:'Iraq / Baghdad',z:'Asia/Baghdad'},{l:'Japan / Yokota',z:'Asia/Tokyo'},
+  {l:'Korea / Osan',z:'Asia/Seoul'},{l:'Guam / Andersen',z:'Pacific/Guam'},
+];
+const DEFAULT_TZ = [
+  {label:'LOCAL',zone:'LOCAL'},{label:'ZULU',zone:'UTC'},
+  {label:'EASTERN',zone:'America/New_York'},{label:'CENTRAL',zone:'America/Chicago'},
+  {label:'MOUNTAIN',zone:'America/Denver'},{label:'PACIFIC',zone:'America/Los_Angeles'},
+];
+let _tzSlots = [...DEFAULT_TZ];
+
+async function loadTZ() {
+  const r = await dbGet('settings','tz_slots');
+  if (r?.value) { try { _tzSlots = JSON.parse(r.value); } catch(e){} }
+}
+function renderTZGrid() {
+  const now = new Date();
+  const el = $('tz-grid'); if (!el) return;
+  el.innerHTML = _tzSlots.map(s => {
+    let v='--:--';
+    try { v = s.zone==='LOCAL' ? now.toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit'}) : now.toLocaleTimeString('en-US',{timeZone:s.zone,hour12:false,hour:'2-digit',minute:'2-digit'}); } catch(e){}
+    return `<div class="tz-cell"><div class="tz-name">${esc(s.label)}</div><div class="tz-val">${v}</div></div>`;
+  }).join('');
+}
+function buildTZSlots() {
+  const el = $('tz-slots'); if (!el) return;
+  const optHtml = TZ_LIST.map(o=>`<option value="${o.z}">${o.l}</option>`).join('');
+  el.innerHTML = _tzSlots.map((s,i) => `
+    <div style="margin-bottom:12px;background:var(--bg0);border:1px solid var(--border);border-radius:8px;padding:10px">
+      <div style="font-size:8px;letter-spacing:2px;color:var(--txt2);margin-bottom:6px">SLOT ${i+1}</div>
+      <input id="tzl-${i}" value="${esc(s.label)}" placeholder="Label (e.g. OSAN)" style="width:100%;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--txt0);font-family:monospace;font-size:13px;padding:9px 10px;margin-bottom:6px;text-transform:uppercase">
+      <select id="tzz-${i}" style="width:100%;background:var(--bg1);border:1px solid var(--border);border-radius:6px;color:var(--txt0);font-family:monospace;font-size:12px;padding:9px 10px;-webkit-appearance:none">
+        ${TZ_LIST.map(o=>`<option value="${o.z}"${o.z===s.zone?' selected':''}>${o.l}</option>`).join('')}
+      </select>
+    </div>`).join('');
+}
+async function saveTZ() {
+  const slots = Array.from({length:6},(_,i)=>({label:($(`tzl-${i}`)?.value.trim().toUpperCase()||`SLOT${i+1}`),zone:($(`tzz-${i}`)?.value||'UTC')}));
+  _tzSlots = slots;
+  await dbPut('settings',{key:'tz_slots',value:JSON.stringify(slots)});
+  toast('Time zones saved.','ok');
+  renderTZGrid();
+}
+
+// ── OPS ────────────────────────────────────────────────────────
+async function searchICAO() {
+  const code = $('icao-in').value.toUpperCase().trim(); if (!code){toast('Enter ICAO code.','err');return;}
+  const all = await dbAll('icao');
+  const r = all.find(x => x.code===code);
+  const el = $('icao-res'); el.className='res-block show';
+  if (!r) { el.innerHTML=`<div style="color:#ef4444;font-size:12px;letter-spacing:1px">NOT FOUND — Add it in Settings → ICAO DB</div>`; return; }
+  el.innerHTML=`<div class="res-row"><span class="res-k">CODE</span><span class="res-v">${r.code}</span></div>
+    <div class="res-row"><span class="res-k">NAME</span><span style="font-size:12px;color:var(--txt0)">${esc(r.name)}</span></div>
+    <div class="res-row"><span class="res-k">CITY</span><span style="font-size:12px;color:var(--txt0)">${esc(r.city||'—')}</span></div>
+    <div class="res-row" style="border:none"><span class="res-k">LOCATION</span><span style="font-size:12px;color:var(--txt0)">${esc(r.country||'—')}</span></div>
+    <button class="btn" style="margin-top:10px;padding:8px 14px;font-size:10px;min-height:36px" onclick="saveFav('icao','${r.code}','${esc(r.name)}')">★ FAVORITE</button>`;
+}
+async function searchGO81(term) {
+  if (!term?.trim()) return;
+  const t = term.toLowerCase();
+  const all = await dbAll('go81');
+  const results = all.filter(r=>r.code.toLowerCase().includes(t)||r.name.toLowerCase().includes(t)||(r.unit||'').toLowerCase().includes(t)||(r.address||'').toLowerCase().includes(t));
+  const el = $('go81-res');
+  if (!results.length){el.innerHTML='<div class="empty">NO RESULTS</div>';return;}
+  el.innerHTML = results.slice(0,12).map(r=>`
+    <div style="background:var(--bg0);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+      <div style="flex:1">
+        <div style="font-size:11px;letter-spacing:2px;color:var(--accent);margin-bottom:2px">${r.code}</div>
+        <div style="font-size:13px">${esc(r.name)}</div>
+        ${r.unit?`<div style="font-size:11px;color:var(--txt2)">${esc(r.unit)}</div>`:''}
+      </div>
+      <button style="background:none;border:none;font-size:20px;color:var(--txt2);cursor:pointer" onclick="saveFav('go81','${r.code}','${esc(r.name)}')">☆</button>
+    </div>`).join('');
+}
+async function saveFav(type,code,name) {
+  const all = await dbAll('favorites');
+  if (all.find(f=>f.type===type&&f.code===code)){toast('Already in favorites.');return;}
+  await dbPut('favorites',{type,code,name,savedAt:new Date().toISOString()});
+  toast('★ Saved.','ok'); renderFavs();
+}
+async function delFav(id) { await dbDel('favorites',id); renderFavs(); toast('Removed.'); }
+async function renderFavs() {
+  const all = await dbAll('favorites'); const el=$('fav-list'); if(!el)return;
+  if(!all.length){el.innerHTML='<div class="empty">NO FAVORITES YET</div>';return;}
+  el.innerHTML=all.map(f=>`<div class="fav-row"><span class="fav-type">${f.type.toUpperCase()}</span><span style="flex:1"><span class="fav-code">${f.code}</span>${esc(f.name)}</span><button style="background:none;border:none;color:var(--txt2);font-size:16px;cursor:pointer" onclick="delFav(${f.id})">✕</button></div>`).join('');
+}
+
+// ── TRACKER ────────────────────────────────────────────────────
+let _entries=[], _period='month';
+const TYPE_LBL={flight:'FLIGHT',launch:'LAUNCH',recovery:'RECOVERY',event:'EVENT',exercise:'EXERCISE',inspection:'INSPECT',volunteer:'VOL HRS',epb:'EPB',other:'OTHER'};
+const fmtDate=s=>{if(!s)return'—';const d=new Date(s+'T00:00:00'),mo=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];return`${p2(d.getDate())} ${mo[d.getMonth()]} ${d.getFullYear()}`;};
+async function loadEntries(){_entries=await dbAll('tracker');_entries.sort((a,b)=>new Date(b.date)-new Date(a.date));}
+function filterPeriod(arr,p){const now=new Date();return arr.filter(e=>{const d=new Date(e.date);if(p==='month')return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();if(p==='year')return d.getFullYear()===now.getFullYear();return true;});}
+function calcSum(arr){const s={flight:0,launch:0,recovery:0,event:0,exercise:0,inspection:0,volunteer:0,epb:0,other:0,volHrs:0,total:0};arr.forEach(e=>{if(s.hasOwnProperty(e.type))s[e.type]++;if(e.type==='volunteer'&&e.hours)s.volHrs+=parseFloat(e.hours)||0;s.total++;});return s;}
+function renderSum(){
+  const el=$('sum-grid');if(!el)return;
+  const s=calcSum(filterPeriod(_entries,_period));
+  el.innerHTML=[{n:s.flight+s.launch+s.recovery,l:'FLIGHTS'},{n:s.event+s.exercise,l:'EVENTS'},{n:s.inspection,l:'INSPECT'},{n:s.volunteer,l:'VOL ENTRIES'},{n:s.volHrs.toFixed(1),l:'VOL HRS'},{n:s.epb,l:'EPB ITEMS'},{n:s.other,l:'OTHER'},{n:s.total,l:'TOTAL'},].map(x=>`<div class="sum-cell"><div class="sum-n">${x.n}</div><div class="sum-l">${x.l}</div></div>`).join('');
+}
+function renderLog(term=''){
+  const el=$('trk-log');if(!el)return;
+  const t=term.toLowerCase();
+  const vis=_entries.filter(e=>!t||(e.description||'').toLowerCase().includes(t)||(e.type||'').toLowerCase().includes(t)||(e.notes||'').toLowerCase().includes(t));
+  if(!vis.length){el.innerHTML='<div class="empty">NO ENTRIES</div>';return;}
+  el.innerHTML=vis.map(e=>`<div class="entry">
+    <div class="entry-top"><span class="badge">${TYPE_LBL[e.type]||e.type}</span><span class="entry-date">${fmtDate(e.date)}</span></div>
+    <div class="entry-desc">${esc(e.description||'—')}</div>
+    ${e.notes?`<div class="entry-note">${esc(e.notes)}</div>`:''}
+    ${e.hours?`<div class="entry-note" style="color:var(--txt2)">Hours: ${e.hours}</div>`:''}
+    ${e.createdAt?`<div class="entry-note" style="color:var(--txt2);font-size:10px">Created: ${new Date(e.createdAt).toLocaleString()}</div>`:''}
+    ${e.modifiedAt?`<div class="entry-note" style="color:var(--txt2);font-size:10px">Modified: ${new Date(e.modifiedAt).toLocaleString()}</div>`:''}
+    <div class="entry-btns">
+      <button class="edit-btn" onclick="editEntry(${e.id})">EDIT</button>
+      <button class="smbtn" onclick="delEntry(${e.id})">DELETE</button>
+    </div>
+  </div>`).join('');
+}
+// Tracks which entry is being edited (null = new entry mode)
+let _editingEntryId = null;
+
+async function editEntry(id){
+  const e = await dbGet('tracker', id);
+  if(!e) return;
+  // Populate form with existing values
+  _editingEntryId = id;
+  $('ent-type').value = e.type || 'flight';
+  $('ent-type').dispatchEvent(new Event('change')); // show/hide hours row
+  $('ent-date').value = e.date || today();
+  $('ent-desc').value = e.description || '';
+  $('ent-notes').value = e.notes || '';
+  if($('ent-hrs')) $('ent-hrs').value = e.hours || '';
+  // Update button label so user knows they are editing
+  $('ent-add').textContent = 'SAVE CHANGES';
+  $('ent-add').style.background = 'var(--cyan)';
+  $('ent-add').style.borderColor = 'var(--cyan)';
+  $('ent-add').style.color = '#000';
+  // Scroll to form
+  $('ent-type').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  toast('Entry loaded for editing. Tap SAVE CHANGES when done.', 'ok');
+}
+
+async function addEntry(){
+  const type=$('ent-type').value,date=$('ent-date').value,desc=$('ent-desc').value.trim();
+  const notes=$('ent-notes').value.trim(),hours=$('ent-hrs').value||'';
+  if(!date){toast('Select a date.','err');return;}if(!desc){toast('Add a description.','err');return;}
+  if(_editingEntryId !== null){
+    // UPDATE existing entry — preserve id and createdAt
+    const existing = await dbGet('tracker', _editingEntryId);
+    await dbPut('tracker',{
+      ...existing,
+      type, date, description:desc, notes, hours,
+      modifiedAt: new Date().toISOString()
+    });
+    _editingEntryId = null;
+    $('ent-add').textContent = '+ LOG ENTRY';
+    $('ent-add').style.background = '';
+    $('ent-add').style.borderColor = '';
+    $('ent-add').style.color = '';
+    toast('Entry updated.','ok');
+  } else {
+    // CREATE new entry
+    await dbPut('tracker',{type,date,description:desc,notes,hours,createdAt:new Date().toISOString()});
+    toast('Entry logged.','ok');
+  }
+  $('ent-desc').value='';$('ent-notes').value='';if($('ent-hrs'))$('ent-hrs').value='';
+  $('ent-date').value=today();
+  await loadEntries();renderLog();renderSum();updateHomeSummary();
+}
+async function delEntry(id){
+  popConfirm('Delete entry?','This cannot be undone.',async()=>{await dbDel('tracker',id);await loadEntries();renderLog();renderSum();updateHomeSummary();toast('Deleted.');});
+}
+async function updateHomeSummary(){
+  await loadEntries();const s=calcSum(filterPeriod(_entries,'month'));
+  const set=(id,v)=>{const el=$(id);if(el)el.textContent=v;};
+  set('ms-fl',s.flight+s.launch+s.recovery);set('ms-ev',s.event+s.exercise);set('ms-ep',s.epb);set('ms-vh',s.volHrs.toFixed(1));
+}
+async function exportJSON(){await loadEntries();dlBlob(new Blob([JSON.stringify(_entries,null,2)],{type:'application/json'}),`flightline_tracker_${stamp()}.json`);}
+async function exportCSV(){
+  await loadEntries();
+  const h=['id','type','date','description','notes','hours','createdAt'];
+  const rows=_entries.map(e=>h.map(k=>`"${String(e[k]||'').replace(/"/g,'""')}"`).join(','));
+  dlBlob(new Blob([[h.join(','),...rows].join('\n')],{type:'text/csv'}),`flightline_tracker_${stamp()}.csv`);
+}
+
+// ── NOTES ──────────────────────────────────────────────────────
+async function saveNote(){
+  const title=$('note-title').value.trim(),body=$('note-body').value.trim();
+  if(!title&&!body){toast('Note is empty.','err');return;}
+  await dbPut('notes',{title:title||'Untitled',body,savedAt:new Date().toISOString()});
+  $('note-title').value='';$('note-body').value='';toast('Note saved.','ok');renderNotes();
+}
+async function delNote(id){await dbDel('notes',id);renderNotes();toast('Deleted.');}
+async function editNote(id){
+  const n=await dbGet('notes',id);if(!n)return;
+  $('edit-title').textContent='EDIT NOTE';$('edit-ttl').value=n.title||'';$('edit-body').value=n.body||'';$('edit-tags').style.display='none';
+  $('edit-modal')._type='note';$('edit-modal')._id=id;showModal('edit-modal');
+}
+async function renderNotes(term=''){
+  const all=await dbAll('notes');const t=term.toLowerCase();const el=$('notes-list');if(!el)return;
+  const fil=all.filter(n=>!t||(n.title||'').toLowerCase().includes(t)||(n.body||'').toLowerCase().includes(t)).sort((a,b)=>new Date(b.savedAt)-new Date(a.savedAt));
+  if(!fil.length){el.innerHTML='<div class="empty">NO NOTES</div>';return;}
+  el.innerHTML=fil.map(n=>`<div class="note-card">
+    <div class="note-head"><span class="note-ttl">${esc(n.title)}</span><span class="note-dt">${n.savedAt?new Date(n.savedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}):''}</span></div>
+    <div class="note-body">${esc(n.body)}</div>
+    <div class="entry-btns" style="margin-top:8px"><button class="edit-btn" onclick="editNote(${n.id})">EDIT</button><button class="smbtn" onclick="delNote(${n.id})">DELETE</button></div>
+  </div>`).join('');
+}
+
+// ── REFERENCE ──────────────────────────────────────────────────
+async function saveRef(){
+  const title=$('ref-title').value.trim(),body=$('ref-body').value.trim(),tags=$('ref-tags').value.trim();
+  if(!title){toast('Add a title.','err');return;}
+  await dbPut('reference',{title,body,tags,savedAt:new Date().toISOString()});
+  $('ref-title').value='';$('ref-body').value='';$('ref-tags').value='';toast('Saved.','ok');renderRef();
+}
+async function delRef(id){await dbDel('reference',id);renderRef();}
+async function editRef(id){
+  const r=await dbGet('reference',id);if(!r)return;
+  $('edit-title').textContent='EDIT REFERENCE';$('edit-ttl').value=r.title||'';$('edit-body').value=r.body||'';$('edit-tags').value=r.tags||'';$('edit-tags').style.display='block';
+  $('edit-modal')._type='ref';$('edit-modal')._id=id;showModal('edit-modal');
+}
+async function renderRef(term=''){
+  const all=await dbAll('reference');const t=term.toLowerCase();const el=$('ref-list');if(!el)return;
+  const fil=all.filter(r=>!t||(r.title||'').toLowerCase().includes(t)||(r.body||'').toLowerCase().includes(t)||(r.tags||'').toLowerCase().includes(t));
+  if(!fil.length){el.innerHTML='<div class="empty">NO REFERENCES</div>';return;}
+  el.innerHTML=fil.map(r=>`<div class="note-card">
+    <div class="note-head"><span class="note-ttl">${esc(r.title)}</span></div>
+    ${r.tags?`<div style="font-size:10px;color:var(--accent);letter-spacing:1px;margin-bottom:5px">${esc(r.tags)}</div>`:''}
+    <div class="note-body">${esc(r.body)}</div>
+    <div class="entry-btns" style="margin-top:8px"><button class="edit-btn" onclick="editRef(${r.id})">EDIT</button><button class="smbtn" onclick="delRef(${r.id})">DEL</button></div>
+  </div>`).join('');
+}
+
+// ── ACRONYMS ───────────────────────────────────────────────────
+async function saveAcro(){
+  const abbr=$('acro-abbr').value.trim().toUpperCase(),def=$('acro-def').value.trim();
+  if(!abbr||!def){toast('Enter both fields.','err');return;}
+  await dbPut('acronyms',{abbr,def});$('acro-abbr').value='';$('acro-def').value='';toast('Saved.','ok');renderAcro();
+}
+async function delAcro(id){await dbDel('acronyms',id);renderAcro();}
+async function renderAcro(term=''){
+  const all=await dbAll('acronyms');const t=term.toLowerCase();const el=$('acro-list');if(!el)return;
+  const fil=all.filter(a=>!t||(a.abbr||'').toLowerCase().includes(t)||(a.def||'').toLowerCase().includes(t)).sort((a,b)=>(a.abbr||'').localeCompare(b.abbr||''));
+  if(!fil.length){el.innerHTML='<div class="empty">NO ACRONYMS</div>';return;}
+  el.innerHTML=fil.map(a=>`<div class="acro-row"><span class="acro-a">${esc(a.abbr)}</span><span class="acro-d" style="flex:1">${esc(a.def)}</span><button style="background:none;border:none;color:var(--txt2);cursor:pointer;font-size:15px" onclick="delAcro(${a.id})">✕</button></div>`).join('');
+}
+
+// ── EDIT MODAL ─────────────────────────────────────────────────
+async function saveEdit(){
+  const modal=$('edit-modal');
+  const title=$('edit-ttl').value.trim(),body=$('edit-body').value.trim(),tags=$('edit-tags').value.trim();
+  if(!title&&!body){toast('Cannot save empty.','err');return;}
+  if(modal._type==='note'){
+    const e=await dbGet('notes',modal._id);
+    if(e){await dbPut('notes',{...e,title:title||'Untitled',body,savedAt:new Date().toISOString()});toast('Note updated.','ok');renderNotes();}
+  } else if(modal._type==='ref'){
+    const e=await dbGet('reference',modal._id);
+    if(e){await dbPut('reference',{...e,title:title||'Untitled',body,tags,savedAt:new Date().toISOString()});toast('Updated.','ok');renderRef();}
+  }
+  hideModal('edit-modal');
+}
+
+// ── SHIFT NOTE ─────────────────────────────────────────────────
+async function loadShiftNote(){const r=await dbGet('settings','shift_note');const v=r?.value||'';$('shift-display').textContent=v||'No shift note. Tap to add...';$('shift-input').value=v;}
+async function saveShiftNote(){const v=$('shift-input').value;await dbPut('settings',{key:'shift_note',value:v});$('shift-display').textContent=v||'No shift note. Tap to add...';hideModal('shift-modal');toast('Saved.','ok');}
+
+// ── SETTINGS ───────────────────────────────────────────────────
+async function updateCounts(){
+  const [i,g]=await Promise.all([dbAll('icao'),dbAll('go81')]);
+  const ic=$('icao-count'),gc=$('go81-count');
+  if(ic)ic.textContent=`${i.length} records`;
+  if(gc)gc.textContent=`${g.length} records`;
+}
+function setTheme(theme){
+  // Apply immediately
+  var attr = (theme === 'default' || !theme) ? '' : theme;
+  document.documentElement.setAttribute('data-theme', attr);
+  // Save to localStorage (synchronous — persists across reloads without async flash)
+  localStorage.setItem('fig_theme', theme || 'default');
+  // Also save to IndexedDB as backup
+  try { dbPut('settings', {key:'theme', value: theme}); } catch(e) {}
+  // Update swatch active state
+  document.querySelectorAll('.swatch').forEach(s =>
+    s.classList.toggle('on', s.dataset.theme === (theme || 'default'))
+  );
+}
+async function loadTheme(){
+  // localStorage is already applied by inline script in <head>
+  // This function just syncs the swatch UI to match current theme
+  var theme = localStorage.getItem('fig_theme') || 'default';
+  // Try IndexedDB as source of truth (may have been set before localStorage was used)
+  try {
+    var r = await dbGet('settings', 'theme');
+    if (r && r.value) {
+      theme = r.value;
+      localStorage.setItem('fig_theme', theme);
+    }
+  } catch(e) {}
+  var attr = (theme === 'default' || !theme) ? '' : theme;
+  document.documentElement.setAttribute('data-theme', attr);
+  document.querySelectorAll('.swatch').forEach(s =>
+    s.classList.toggle('on', s.dataset.theme === (theme || 'default'))
+  );
+}
+async function exportAll(){dlBlob(new Blob([JSON.stringify(await dbExport(),null,2)],{type:'application/json'}),`flightline_backup_${stamp()}.json`);toast('Backup exported.','ok');}
+async function importBackup(file){
+  try{const text=await file.text();await dbImport(JSON.parse(text));toast('Import complete. Reloading...','ok');setTimeout(()=>location.reload(),1500);}
+  catch(e){toast('Import failed.','err');}
+}
+async function saveICAO(){
+  const code=$('icao-code').value.trim().toUpperCase(),name=$('icao-name').value.trim();
+  if(!code||!name){toast('Code and name required.','err');return;}
+  await dbPut('icao',{code,name,city:$('icao-city').value.trim(),country:$('icao-cty').value.trim()});
+  $('icao-code').value='';$('icao-name').value='';$('icao-city').value='';$('icao-cty').value='';
+  toast(`ICAO ${code} saved.`,'ok');updateCounts();
+}
+async function saveGO81(){
+  const code=$('go81-code').value.trim().toUpperCase(),name=$('go81-name').value.trim();
+  if(!code||!name){toast('Code and name required.','err');return;}
+  await dbPut('go81',{code,name,unit:$('go81-unit').value.trim(),address:$('go81-addr').value.trim()});
+  $('go81-code').value='';$('go81-name').value='';$('go81-unit').value='';$('go81-addr').value='';
+  toast(`GO81 ${code} saved.`,'ok');updateCounts();
+}
+
+// ── CSV UPLOAD ─────────────────────────────────────────────────
+function parseCSV(text){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());if(!lines.length)return[];
+  const headers=lines[0].split(',').map(h=>h.trim().toLowerCase().replace(/"/g,''));
+  return lines.slice(1).map(line=>{const vals=line.split(',').map(v=>v.trim().replace(/^"|"$/g,''));const obj={};headers.forEach((h,i)=>{obj[h]=vals[i]||'';});return obj;}).filter(r=>Object.values(r).some(v=>v));
+}
+function setupCSV(type){
+  const drop=$(type+'-drop'),fileIn=$(type+'-csv'),prev=$(type+'-csv-prev'),stat=$(type+'-csv-stat'),btns=$(type+'-csv-btns'),impBtn=$(type+'-csv-imp'),canBtn=$(type+'-csv-can');
+  let parsed=[];
+  if(drop) drop.onclick=()=>fileIn?.click();
+  if(fileIn) fileIn.onchange=e=>{
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      parsed=parseCSV(ev.target.result).filter(r=>r.code);
+      if(!parsed.length){stat.textContent='No valid records found.';stat.style.color='#ef4444';return;}
+      prev.style.display='block';prev.textContent=parsed.slice(0,6).map(r=>`${r.code} — ${r.name||'?'}`).join('\n')+(parsed.length>6?`\n...and ${parsed.length-6} more`:'');
+      stat.textContent=`⬆ ${parsed.length} records ready`;stat.style.color='#22c55e';
+      btns.style.display='flex';
+    };
+    reader.readAsText(file);
+  };
+  if(impBtn) impBtn.onclick=async()=>{
+    let added=0,upd=0;
+    for(const r of parsed){const ex=await dbGet(type,r.code);await dbPut(type,r);ex?upd++:added++;}
+    stat.textContent=`✓ Done: ${added} added, ${upd} updated.`;stat.style.color='#22c55e';
+    btns.style.display='none';prev.style.display='none';parsed=[];if(fileIn)fileIn.value='';
+    await updateCounts();toast(`${type.toUpperCase()} import complete.`,'ok');
+  };
+  if(canBtn) canBtn.onclick=()=>{parsed=[];prev.style.display='none';prev.textContent='';stat.textContent='';btns.style.display='none';if(fileIn)fileIn.value='';};
+}
+
+// ── MAIN INIT ──────────────────────────────────────────────────
+(async function init() {
+
+  // 1. Nav — bind immediately, no waiting
+  document.querySelectorAll('[data-nav]').forEach(b => b.addEventListener('click', () => navTo(b.dataset.nav)));
+
+  // 2. Tab systems
+  document.querySelectorAll('#tool-tabs .tab').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('#tool-tabs .tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');document.querySelectorAll('#tp-julian,#tp-convert,#tp-timers').forEach(p=>p.classList.remove('on'));$('tp-'+t.dataset.t)?.classList.add('on');}));
+  document.querySelectorAll('#note-tabs .tab').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('#note-tabs .tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');document.querySelectorAll('#np-notes,#np-ref,#np-acro').forEach(p=>p.classList.remove('on'));$('np-'+t.dataset.nt)?.classList.add('on');}));
+  document.querySelectorAll('#settings-tabs .tab').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('#settings-tabs .tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');document.querySelectorAll('#stp-general,#stp-icao,#stp-go81,#stp-tz').forEach(p=>p.classList.remove('on'));$('stp-'+t.dataset.st)?.classList.add('on');}));
+  document.querySelectorAll('#conv-tabs .stab').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('#conv-tabs .stab').forEach(x=>x.classList.remove('on'));t.classList.add('on');document.querySelectorAll('[id^="cv-"]').forEach(p=>p.classList.remove('on'));$('cv-'+t.dataset.c)?.classList.add('on');}));
+
+  // 3. Converter inputs
+  [['ci-length','co-length',C.length],['ci-weight','co-weight',C.weight],['ci-temp','co-temp',C.temp],['ci-fuel','co-fuel',C.fuel],['ci-pressure','co-pressure',C.pressure],['ci-torque','co-torque',C.torque]].forEach(([inId,outId,fn])=>{
+    const el=$(inId);if(!el)return;
+    el.addEventListener('input',()=>{const v=parseFloat(el.value);const out=$(outId);if(!out)return;if(isNaN(v)){out.innerHTML='';return;}out.innerHTML=C.html(fn(v));});
+  });
+
+  // 4. Clock starts NOW
+  tick();
+  setInterval(tick, 1000);
+
+  // 5. Timers
+  $('sw-start').addEventListener('click', swToggle);
+  $('sw-lap').addEventListener('click', swLap);
+  $('sw-reset').addEventListener('click', swReset);
+  $('cd-start').addEventListener('click', cdToggle);
+  $('cd-reset').addEventListener('click', cdReset);
+  $('shift-set').addEventListener('click', setShift);
+
+  // 6. Julian
+  $('d2j-btn').addEventListener('click', d2j);
+  $('j2d-btn').addEventListener('click', j2d);
+
+  // 7. Tracker
+  $('ent-type').addEventListener('change',()=>{ $('ent-hrs-row').style.display=$('ent-type').value==='volunteer'?'flex':'none'; });
+  $('ent-add').addEventListener('click', addEntry);
+  $('trk-search').addEventListener('input', e => renderLog(e.target.value));
+  $('exp-json').addEventListener('click', exportJSON);
+  $('exp-csv').addEventListener('click', exportCSV);
+  document.querySelectorAll('.pbtn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.pbtn').forEach(x=>x.classList.remove('on'));b.classList.add('on');_period=b.dataset.p;renderSum();}));
+
+  // 8. Notes
+  $('note-save').addEventListener('click', saveNote);
+  $('note-search').addEventListener('input', e => renderNotes(e.target.value));
+  $('ref-save').addEventListener('click', saveRef);
+  $('ref-search').addEventListener('input', e => renderRef(e.target.value));
+  $('acro-save').addEventListener('click', saveAcro);
+  $('acro-search').addEventListener('input', e => renderAcro(e.target.value));
+
+  // 9. Modals
+  $('shift-block').addEventListener('click', ()=>{ $('shift-input').value=$('shift-display').textContent==='No shift note. Tap to add...'?'':$('shift-display').textContent; showModal('shift-modal'); });
+  $('shift-cancel').addEventListener('click', ()=>hideModal('shift-modal'));
+  $('shift-save-btn').addEventListener('click', saveShiftNote);
+  $('conf-cancel').addEventListener('click', ()=>hideModal('confirm-modal'));
+  $('conf-ok').addEventListener('click', ()=>{ if(_confCb)_confCb(); _confCb=null; hideModal('confirm-modal'); });
+  $('edit-cancel').addEventListener('click', ()=>hideModal('edit-modal'));
+  $('edit-ok').addEventListener('click', saveEdit);
+
+  // 10. Settings
+  $('set-export').addEventListener('click', exportAll);
+  $('set-import').addEventListener('click', ()=>$('import-file').click());
+  $('import-file').addEventListener('change', e=>{ if(e.target.files[0])importBackup(e.target.files[0]); });
+  $('set-clear').addEventListener('click', ()=>popConfirm('Clear ALL Data?','This permanently deletes everything.',async()=>{await dbClearAll();toast('Cleared. Reloading...','ok');setTimeout(()=>location.reload(),1500);}));
+  document.querySelectorAll('.swatch').forEach(s=>s.addEventListener('click',()=>setTheme(s.dataset.theme)));
+  $('icao-save').addEventListener('click', saveICAO);
+  $('go81-save').addEventListener('click', saveGO81);
+  $('tz-save').addEventListener('click', saveTZ);
+  setupCSV('icao');
+  setupCSV('go81');
+
+  // 11. Online status
+  const dot=$('topbar-dot');
+  const onlineStatus=()=>{ if(dot){dot.style.color=navigator.onLine?'#22c55e':'#4a5568';} };
+  window.addEventListener('online',onlineStatus);
+  window.addEventListener('offline',onlineStatus);
+  onlineStatus();
+
+  // 12. Today's date
+  $('ent-date').value = today();
+
+  // 13. DB — open and load data (errors isolated)
+  try { await dbOpen(); } catch(e) { console.error('DB failed to open:', e); toast('Storage error — data may not save.','err'); return; }
+  try { await loadTheme(); } catch(e) {}
+  try { await loadTZ(); renderTZGrid(); buildTZSlots(); } catch(e) {}
+  try { await seedIfEmpty(); } catch(e) {}
+  try { await loadEntries(); renderLog(); renderSum(); } catch(e) {}
+  try { await updateHomeSummary(); } catch(e) {}
+  try { await renderNotes(); } catch(e) {}
+  try { await renderRef(); } catch(e) {}
+  try { await renderAcro(); } catch(e) {}
+  try { await renderFavs(); } catch(e) {}
+  try { await loadShiftNote(); } catch(e) {}
+  try { await updateCounts(); } catch(e) {}
+
+  // 14. Service worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('./sw.js')
+        .then(function(reg) {
+          console.log('[F.I.G.] SW registered:', reg.scope);
+        })
+        .catch(function(err) {
+          console.warn('[F.I.G.] SW failed:', err.message);
+        });
+    });
+  }
+
+})();
+</script>
+</body>
+</html>
